@@ -41,7 +41,7 @@ mergeproof check         # the gate: exit 0 pass, 1 fail, 2 pending
 
 `explain` on a branch that changed a tool module and nothing else:
 
-```text
+````text
 # What this change must prove (fail)
 
 ## tool-change-needs-unit-tests [block]
@@ -68,7 +68,7 @@ traces:
   before: https://langfuse.example.com/project/<project-id>/traces/<trace-id>
   after: https://langfuse.example.com/project/<project-id>/traces/<trace-id>
 ```
-```
+````
 
 ## The policy file
 
