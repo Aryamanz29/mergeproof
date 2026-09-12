@@ -50,7 +50,10 @@ class BraintrustVerifier:
             raise ValueError("the link pattern must capture `project` and `trace_id`")
         safe_project = project.replace("'", "")
         safe_id = re.sub(r"[^0-9a-fA-F-]", "", trace_id)
-        query = f"SELECT id FROM project_logs('{safe_project}') WHERE id = '{safe_id}' OR root_span_id = '{safe_id}' LIMIT 1"
+        query = (
+            f"SELECT id FROM project_logs('{safe_project}') "
+            f"WHERE id = '{safe_id}' OR root_span_id = '{safe_id}' LIMIT 1"
+        )
         response = self._client.post("/btql", json={"query": query, "fmt": "json"})
         response.raise_for_status()
         return bool(response.json().get("data"))
