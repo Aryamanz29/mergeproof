@@ -15,10 +15,11 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      # The workflow token cannot trigger other workflows, so CI does not start on the release PR
-      # by itself; close and reopen it once, or push to it, and the checks run.
+      # With RELEASE_PLEASE_TOKEN (a fine-grained PAT: contents and pull requests, read and write)
+      # the release PR is opened as you and CI starts on it. With the workflow token it cannot
+      # start CI; close and reopen the PR once and the checks run.
       - uses: googleapis/release-please-action@v4
         with:
-          token: ${{ github.token }}
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
