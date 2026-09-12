@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). From 0.2.0 on, entries are generated
 by release-please from Conventional Commit messages.
 
+## [0.4.0](https://github.com/Aryamanz29/mergeproof/compare/v0.3.0...v0.4.0) (2026-09-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* the `mergeproof mcp` command and the `mcp` and `otel` extras are removed.
+
+### Added
+
+* **action:** one mergeproof row in the checks list ([5d41125](https://github.com/Aryamanz29/mergeproof/commit/5d41125abcba3cbb190e272862c89f7e7a81e2bd))
+* **action:** one mergeproof row; manual dispatch for the publish workflows ([d9ec0f6](https://github.com/Aryamanz29/mergeproof/commit/d9ec0f64105ce280df2e8f6282c18237d846eaa7))
+* drop the MCP server and OpenTelemetry export ([97ac367](https://github.com/Aryamanz29/mergeproof/commit/97ac367f1d5ae71fc5d3b0308cf19098f885bdc5))
+
 ## [0.3.0](https://github.com/Aryamanz29/mergeproof/compare/v0.2.0...v0.3.0) (2026-09-12)
 
 
