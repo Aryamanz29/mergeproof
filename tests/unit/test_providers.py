@@ -220,3 +220,40 @@ def test_run_url(monkeypatch):
     monkeypatch.setenv("GITHUB_REPOSITORY", "o/r")
     monkeypatch.setenv("GITHUB_RUN_ID", "9")
     assert github.run_url() == "https://github.com/o/r/actions/runs/9"
+
+
+@respx.mock
+def test_publish_report_returns_what_it_published():
+    from mergeproof.policy import Severity
+    from mergeproof.report import Outcome, Report, RequirementResult, RuleResult, Status
+
+    report = Report(
+        source="github",
+        repo="o/r",
+        number=7,
+        head_sha="a" * 40,
+        rules=[
+            RuleResult(
+                id="r",
+                severity=Severity.BLOCK,
+                matched=True,
+                requirements=[
+                    RequirementResult(
+                        label="x",
+                        check="pr.body",
+                        severity=Severity.BLOCK,
+                        outcome=Outcome(status=Status.PASS, summary="ok"),
+                    )
+                ],
+            )
+        ],
+    )
+    respx.get("https://api.github.com/repos/o/r/issues/7/comments").mock(return_value=httpx.Response(200, json=[]))
+    respx.post("https://api.github.com/repos/o/r/issues/7/comments").mock(
+        return_value=httpx.Response(201, json={"html_url": "https://c/1"})
+    )
+    respx.post(f"https://api.github.com/repos/o/r/statuses/{'a' * 40}").mock(return_value=httpx.Response(201, json={}))
+    published = github.publish_report(github.Client("t"), report, comment=True, status=True)
+    assert published == {"comment": "https://c/1", "status": "success"}
+    with pytest.raises(ValueError):
+        github.publish_report(github.Client("t"), Report(), comment=True)

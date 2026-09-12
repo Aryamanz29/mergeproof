@@ -266,6 +266,10 @@ class TestLabelsAndBody:
 
 
 class TestShell:
+    def test_not_applicable_without_a_checkout(self):
+        out = Shell().run(make_context(has_checkout=False, online=False), Shell.Params(run="true"), [])
+        assert out.status == Status.SKIP and "GitHub App" in out.summary
+
     def test_exit_codes_and_env(self, tmp_path):
         ctx = make_context(files=["a.py", "b.py"], root=str(tmp_path))
         out = run_check(Shell(), ctx, run='test "$(printf "%s" "$MERGEPROOF_FILES" | wc -l | tr -d " ")" = 1')

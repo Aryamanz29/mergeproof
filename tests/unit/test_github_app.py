@@ -13,7 +13,6 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from starlette.testclient import TestClient
 
 from mergeproof import github_app
-from mergeproof.providers import github
 
 API = "https://api.github.com"
 POLICY = "rules:\n  - id: labelled\n    require: [{check: pr.labels, with: {any_of: [ok]}}]\n"
@@ -218,49 +217,3 @@ def test_settings_from_env(monkeypatch, keypair, tmp_path):
     monkeypatch.setenv("MERGEPROOF_WEBHOOK_SECRET", "s")
     settings = github_app.Settings.from_env()
     assert settings.private_key == keypair[0] and settings.policy_path == "mergeproof.yaml"
-
-
-def test_shell_check_is_not_applicable_without_a_checkout():
-    from mergeproof.checks.shell import Shell
-    from mergeproof.context import Context
-    from mergeproof.report import Status
-
-    out = Shell().run(Context(has_checkout=False), Shell.Params(run="true"), [])
-    assert out.status == Status.SKIP and "GitHub App" in out.summary
-
-
-@respx.mock
-def test_publish_report_returns_what_it_published():
-    from mergeproof.policy import Severity
-    from mergeproof.report import Outcome, Report, RequirementResult, RuleResult, Status
-
-    report = Report(
-        source="github",
-        repo="o/r",
-        number=7,
-        head_sha="a" * 40,
-        rules=[
-            RuleResult(
-                id="r",
-                severity=Severity.BLOCK,
-                matched=True,
-                requirements=[
-                    RequirementResult(
-                        label="x",
-                        check="pr.body",
-                        severity=Severity.BLOCK,
-                        outcome=Outcome(status=Status.PASS, summary="ok"),
-                    )
-                ],
-            )
-        ],
-    )
-    respx.get(f"{API}/repos/o/r/issues/7/comments").mock(return_value=httpx.Response(200, json=[]))
-    respx.post(f"{API}/repos/o/r/issues/7/comments").mock(
-        return_value=httpx.Response(201, json={"html_url": "https://c/1"})
-    )
-    respx.post(f"{API}/repos/o/r/statuses/{'a' * 40}").mock(return_value=httpx.Response(201, json={}))
-    published = github.publish_report(github.Client("t"), report, comment=True, status=True)
-    assert published == {"comment": "https://c/1", "status": "success"}
-    with pytest.raises(ValueError):
-        github.publish_report(github.Client("t"), Report(), comment=True)
