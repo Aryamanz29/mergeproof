@@ -11,6 +11,7 @@ cannot silently rot.
 | [`mcp-server/`](mcp-server/) | unit + integration tests for tools, before/after traces from an open-source tracer, human sign-off, an LLM reviewer's verdict |
 | [`web-service/`](web-service/) | migrations need rollback notes, UI changes need screenshots, sensitive paths need a label |
 | [`plugins/mergeproof-langfuse/`](plugins/mergeproof-langfuse/) | a verifier plugin that looks trace links up in Langfuse |
+| [`plugins/mergeproof-braintrust/`](plugins/mergeproof-braintrust/) | the same for Braintrust, through BTQL |
 
 Run one yourself (the scenario files are the JSON `mergeproof context` prints, with the verdict expected):
 

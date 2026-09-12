@@ -81,4 +81,5 @@ jaeger = "mypkg.verifiers:JaegerVerifier"
 
 The complete worked example is [`examples/plugins/mergeproof-langfuse`](../examples/plugins/mergeproof-langfuse):
 a verifier for Langfuse and a `langfuse.traces` check that is `evidence.links` with Langfuse
-defaults, in about forty lines with tests.
+defaults, in about forty lines with tests. [`mergeproof-braintrust`](../examples/plugins/mergeproof-braintrust)
+is the same shape for Braintrust, looking ids up through BTQL.

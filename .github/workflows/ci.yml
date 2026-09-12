@@ -53,9 +53,9 @@ jobs:
         run: |
           uv build
           uv venv .itenv
-          uv pip install --no-sources --python .itenv/bin/python "$(ls dist/*.whl)" ./examples/plugins/mergeproof-langfuse pytest anyio respx
+          uv pip install --no-sources --python .itenv/bin/python "$(ls dist/*.whl)" ./examples/plugins/mergeproof-langfuse ./examples/plugins/mergeproof-braintrust pytest anyio respx
       - run: .itenv/bin/python -m pytest tests/integration -m integration -p no:cacheprovider
-      - run: .itenv/bin/python -m pytest examples/plugins/mergeproof-langfuse/tests -p no:cacheprovider
+      - run: .itenv/bin/python -m pytest examples/plugins/mergeproof-langfuse/tests examples/plugins/mergeproof-braintrust/tests -p no:cacheprovider
         env:
           PYTHONPATH: ""
 
