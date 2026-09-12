@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 - Container image `ghcr.io/aryamanz29/mergeproof` with the CLI and MCP server; published on every release tag.
+- `mergeproof[otel]`: the MCP server exports OpenTelemetry spans over OTLP/HTTP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set (Langfuse, Jaeger, Phoenix, any collector).
+### Changed
+- `mergeproof checks` marks checks that only produce results in GitHub mode.
 
 ## [0.2.0] - 2026-09-12
 
