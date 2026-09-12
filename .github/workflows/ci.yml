@@ -64,6 +64,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the smoke test diffs against HEAD~1
       - uses: docker/build-push-action@v6
         with:
           context: .
