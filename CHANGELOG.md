@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- `mergeproof[otel]`: the MCP server exports OpenTelemetry spans over OTLP/HTTP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set (Langfuse, Jaeger, Phoenix, any collector).
 ### Changed
 - `mergeproof checks` marks checks that only produce results in GitHub mode.
 

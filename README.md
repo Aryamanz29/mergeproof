@@ -236,6 +236,27 @@ Tools: `explain`, `check`, `evidence_block`, `validate_policy`, `list_checks`,
 `agent_instructions`; resource `mergeproof://policy`. All read-only. An agent can learn what to
 prove and check its own work; it cannot approve anything.
 
+### Tracing the server itself
+
+The MCP SDK wraps every tool call in an OpenTelemetry span. Install the `otel` extra and point the
+standard variables at any OTLP/HTTP receiver and those spans are exported; nothing is sent
+otherwise.
+
+```sh
+pip install 'mergeproof[mcp,otel]'
+
+# Langfuse (self-hosted or cloud): basic auth with the project keys
+export OTEL_EXPORTER_OTLP_ENDPOINT=https://langfuse.example.com/api/public/otel
+export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Basic $(printf '%s:%s' "$LANGFUSE_PUBLIC_KEY" "$LANGFUSE_SECRET_KEY" | base64)"
+
+# Jaeger or an OpenTelemetry Collector on the default OTLP/HTTP port
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+```
+
+Each span is named after the MCP method and tool (`tools/call explain`) and carries the
+`gen_ai.tool.name` attribute, so a dashboard can answer "which agent asked what, and how often did
+`check` come back failing" without any code in this project knowing which backend it talks to.
+
 ## Plumbing
 
 The porcelain commands are compositions of filters that read and write JSON:
