@@ -1,0 +1,15 @@
+# mergeproof gating itself.
+version: 1
+project: mergeproof
+rules:
+  - id: checks-need-tests
+    description: A new or changed built-in check ships with tests.
+    when: { paths: ["src/mergeproof/checks/*.py"], exclude_paths: ["**/__init__.py", "**/base.py", "**/registry.py"] }
+    require:
+      - check: tests.changed
+        with: { any_of: ["tests/test_checks.py", "tests/test_*.py"] }
+  - id: unit-tests-green
+    when: { paths: ["src/**", "tests/**", "pyproject.toml"] }
+    require:
+      - check: ci.job_passed
+        with: { name: "test \\(3\\.12\\)", regex: true }
