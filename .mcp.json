@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "mergeproof": {
-      "command": "uv",
-      "args": ["run", "mergeproof", "mcp", "--policy", "mergeproof.yaml"]
-    }
-  }
-}

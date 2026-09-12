@@ -1,8 +1,7 @@
 """Evidence gates for pull requests.
 
 A policy file declares what a change must prove before it merges. The same
-policy is enforced in CI, explained to contributors and coding agents, and
-served over MCP.
+policy is enforced in CI and explained to contributors and coding agents.
 """
 
 from mergeproof.checks.base import Check

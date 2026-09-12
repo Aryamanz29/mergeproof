@@ -19,8 +19,7 @@
 `mergeproof` gates pull requests on **evidence**. A policy file in the repository says what a change
 must prove before it merges: tests for the modules it touched, a green integration job, before/after
 links from a live environment, a human who opened them. CI enforces it and reports on the PR. Coding
-agents read the same file, through `AGENTS.md` or an MCP server, so what they are told is what CI
-checks.
+agents read the same file through `AGENTS.md`, so what they are told is what CI checks.
 
 <p align="center"><img src="docs/overview.svg" alt="One policy file drives CI, coding agents and reviewers" width="720"></p>
 
@@ -156,12 +155,12 @@ is a plugin: [docs/plugins.md](docs/plugins.md).
 
 ```sh
 mergeproof agent-prompt >> AGENTS.md     # the rules, rendered from the policy
-mergeproof mcp                           # the same over MCP: explain, check, evidence_block, ...
+mergeproof explain                       # what the current diff still has to prove
 ```
 
 Agents learn what to prove and check their own work before opening the PR. They cannot approve
-anything: human verification is the one requirement no token of theirs can satisfy. Details, the
-MCP tool table and tracing: [docs/agents.md](docs/agents.md).
+anything: human verification is the one requirement no token of theirs can satisfy. See
+[docs/agents.md](docs/agents.md).
 
 ## Documentation
 
@@ -169,7 +168,7 @@ MCP tool table and tracing: [docs/agents.md](docs/agents.md).
 |---|---|
 | [docs/policy.md](docs/policy.md) | Rules, `when` matchers, severity, the evidence block, every check and its parameters |
 | [docs/github.md](docs/github.md) | Workflow, action inputs, rulesets, the three report channels, posting as your own App, JUnit and reviewdog output |
-| [docs/agents.md](docs/agents.md) | `AGENTS.md` generation, the MCP server, OpenTelemetry export |
+| [docs/agents.md](docs/agents.md) | `AGENTS.md` generation, the agent loop with the CLI, LLM reviewers |
 | [docs/cli.md](docs/cli.md) | Every command, the JSON plumbing, output formats, exit codes |
 | [docs/plugins.md](docs/plugins.md) | Writing checks and verifiers, packaging them |
 | [examples/](examples/) | Three example projects with scenario fixtures the test suite runs, and a Langfuse verifier plugin |
@@ -178,7 +177,7 @@ MCP tool table and tracing: [docs/agents.md](docs/agents.md).
 ## Run without installing
 
 ```sh
-uvx --from 'mergeproof[mcp]' mergeproof explain
+uvx mergeproof explain
 docker run --rm -v "$PWD":/repo ghcr.io/aryamanz29/mergeproof check --local
 ```
 

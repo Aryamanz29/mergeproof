@@ -24,7 +24,7 @@
 
   <rect x="415" y="130" width="405" height="70" rx="10" fill="#f9fafb" stroke="#d1d5db"/>
   <text x="435" y="155" font-weight="600" fill="#111827">Coding agents and contributors</text>
-  <text x="435" y="177" fill="#374151" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">mergeproof explain   ·   mergeproof mcp</text>
+  <text x="435" y="177" fill="#374151" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">mergeproof explain   ·   AGENTS.md</text>
   <text x="720" y="155" fill="#6b7280" font-size="12">learn what to prove</text>
   <text x="720" y="171" fill="#6b7280" font-size="12">before pushing</text>
 

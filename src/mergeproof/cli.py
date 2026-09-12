@@ -305,15 +305,6 @@ def cmd_template(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_mcp(args: argparse.Namespace) -> int:
-    try:
-        from mergeproof.mcp_server import serve
-    except ImportError:
-        die("the MCP server needs the optional dependency: pip install 'mergeproof[mcp]'")
-    serve(policy_path=args.policy, root=args.root, base=args.base)
-    return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="mergeproof", description="Evidence gates for pull requests.")
     parser.add_argument("--version", action="version", version=f"mergeproof {__version__}")
@@ -371,11 +362,6 @@ def build_parser() -> argparse.ArgumentParser:
     add_policy_arg(p)
     p.set_defaults(func=cmd_agent_prompt)
 
-    p = sub.add_parser("mcp", help="serve the policy to coding agents over MCP (stdio)")
-    add_policy_arg(p)
-    p.add_argument("--root", default=".")
-    p.add_argument("--base", default=os.environ.get("MERGEPROOF_BASE", "origin/main"))
-    p.set_defaults(func=cmd_mcp)
     return parser
 
 
