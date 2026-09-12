@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="mergeproof logo">
+  <defs>
+    <linearGradient id="shield" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#5b21b6"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.22"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- shield -->
+  <path d="M128 18 L218 50 V126 C218 184 178 224 128 242 C78 224 38 184 38 126 V50 Z" fill="url(#shield)"/>
+  <path d="M128 18 L218 50 V126 C218 184 178 224 128 242 C78 224 38 184 38 126 V50 Z" fill="url(#sheen)"/>
+  <path d="M128 34 L202 60 V126 C202 174 168 208 128 224 C88 208 54 174 54 126 V60 Z" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="3"/>
+
+  <!-- two branches merging into one -->
+  <path d="M92 84 C92 126 128 118 128 166" fill="none" stroke="#ffffff" stroke-width="11" stroke-linecap="round"/>
+  <path d="M164 84 C164 126 128 118 128 166" fill="none" stroke="#ffffff" stroke-width="11" stroke-linecap="round"/>
+
+  <!-- branch tips -->
+  <circle cx="92" cy="82" r="14" fill="#ffffff"/>
+  <circle cx="92" cy="82" r="6.5" fill="#6d28d9"/>
+  <circle cx="164" cy="82" r="14" fill="#ffffff"/>
+  <circle cx="164" cy="82" r="6.5" fill="#6d28d9"/>
+
+  <!-- the merged, verified commit -->
+  <circle cx="128" cy="172" r="22" fill="#ffffff"/>
+  <path d="M116 172 L125 181 L141 163" fill="none" stroke="#5b21b6" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
