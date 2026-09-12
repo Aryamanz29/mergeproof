@@ -178,7 +178,10 @@ MARK = "🛡️"
 
 
 def titled(text: str) -> str:
-    """The headline as it appears on check and status rows, carrying the mark whatever token posted it."""
+    """The headline on the Check Run row, carrying the mark whatever token posted it.
+
+    Only the Check Run gets it: the commit status API rejects descriptions containing emoji.
+    """
     return f"{MARK} {text}"
 
 
@@ -197,7 +200,7 @@ def set_commit_status(
     payload: dict[str, Any] = {
         "state": STATUS_STATE[verdict],
         "context": "mergeproof",
-        "description": titled(description)[:140],
+        "description": description[:140],
     }
     if target_url:
         payload["target_url"] = target_url
