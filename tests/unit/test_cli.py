@@ -125,6 +125,25 @@ def test_comment_without_github_context_is_skipped(repo, capsys):
     assert "needs a GitHub context" in capsys.readouterr().err
 
 
+def test_command_surface_is_the_documented_one(capsys):
+    from mergeproof.cli import build_parser
+
+    commands = set(build_parser()._subparsers._group_actions[0].choices)
+    assert commands == {
+        "check",
+        "explain",
+        "template",
+        "context",
+        "report",
+        "comment",
+        "validate",
+        "init",
+        "checks",
+        "agent-prompt",
+    }
+    assert "mcp" not in commands
+
+
 def test_module_entry_point():
     proc = subprocess.run([sys.executable, "-m", "mergeproof", "--version"], capture_output=True, text=True)
     assert proc.returncode == 0 and proc.stdout.startswith("mergeproof ")
