@@ -127,6 +127,12 @@ def test_headline_counts_and_annotations(pol, registry):
     assert empty.headline() == "no rules apply to this change"
 
 
+def test_report_carries_what_the_comment_links_to(pol, registry):
+    ctx = make_context(files=["app/tools/x.py"], repo="o/r", number=4, base_ref="release/1")
+    report = engine.evaluate(pol, ctx, registry)
+    assert (report.repo, report.number, report.base_ref, report.policy_path) == ("o/r", 4, "release/1", "mergeproof.yaml")
+
+
 def test_report_json_roundtrip(pol, registry):
     report = engine.evaluate(pol, make_context(files=["app/tools/x.py"]), registry)
     again = Report.from_json(report.to_json())
