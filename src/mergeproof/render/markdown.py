@@ -24,34 +24,34 @@ HEADLINE = {
 
 
 def report_markdown(report: Report, marker: bool = True) -> str:
-    """The sticky PR comment."""
+    """The sticky PR comment. Kept short: the table says what stands, the list below says what to do."""
     verdict = report.verdict
     lines: list[str] = [MARKER] if marker else []
     title = f"## {ICON[verdict]} mergeproof: {HEADLINE.get(verdict, verdict.value)}"
-    if report.head_sha:
-        title += f" <sub>`{report.head_sha[:7]}`</sub>"
-    lines += [title, ""]
+    lines += [title, "", f"**{report.headline()}**" + (f" for `{report.head_sha[:7]}`" if report.head_sha else ""), ""]
     if not report.matched:
         lines.append("No rules apply to this change.")
         return "\n".join(lines)
 
-    lines += ["| Rule | Requirement | | Detail |", "|---|---|:-:|---|"]
+    lines += ["| Status | Requirement | Rule | Detail |", "|:-:|---|---|---|"]
     for rule, req in report.requirements:
-        note = "" if req.severity == Severity.BLOCK else " <sub>(warn)</sub>"
-        lines.append(f"| `{rule.id}` | {req.label}{note} | {ICON[req.outcome.status]} | {req.outcome.summary} |")
+        note = "" if req.severity == Severity.BLOCK else " <sub>warn</sub>"
+        lines.append(f"| {ICON[req.outcome.status]} | {req.label}{note} | `{rule.id}` | {req.outcome.summary} |")
     lines.append("")
 
     unmet = report.unmet()
     if unmet:
-        lines += ["### Still needed", ""]
-        for rule, req in unmet:
-            lines.append(f"**{req.label}** (`{rule.id}`): {req.outcome.summary}")
-            lines += [f"- {d}" for d in req.outcome.details[:8]]
-            if req.outcome.fix:
-                lines.append(f"- **Fix:** {req.outcome.fix}")
+        lines += ["### What to do", ""]
+        for _, req in unmet:
+            lines.append(f"{ICON[req.outcome.status]} **{req.label}**: {req.outcome.fix or req.outcome.summary}")
+            if req.outcome.status in (Status.FAIL, Status.ERROR):
+                shown = req.outcome.details[:3]
+                lines += [f"  - {d}" for d in shown]
+                if len(req.outcome.details) > 3:
+                    lines.append(f"  - and {len(req.outcome.details) - 3} more")
             if req.instructions:
-                lines.append(f"- {req.instructions.strip()}")
-            lines.append("")
+                lines.append(f"  - {req.instructions.strip()}")
+        lines.append("")
         template = report.evidence_template()
         if template:
             lines += [
@@ -62,7 +62,10 @@ def report_markdown(report: Report, marker: bool = True) -> str:
                 "</details>",
                 "",
             ]
-    lines.append(f"<sub>`mergeproof explain` shows these requirements locally · source: {report.source}</sub>")
+    lines.append(
+        f"<sub>Evaluated {report.evaluated_at}. Re-evaluated on push, label, comment and CI completion when the "
+        f"workflow subscribes to those events. `mergeproof explain` shows the same requirements locally.</sub>"
+    )
     return "\n".join(lines)
 
 

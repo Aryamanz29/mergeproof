@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from mergeproof import patterns
 from mergeproof.checks.base import Check, fail, ok, skip
 from mergeproof.context import Context
-from mergeproof.report import Outcome
+from mergeproof.report import Annotation, Outcome
 
 
 class TestsChanged(Check):
@@ -58,6 +58,10 @@ class TestsChanged(Check):
                 details=[f"{src}: expected a changed test matching {glob}" for src, glob in missing.items()],
                 fix="Add a regression test for each listed file: it should fail before the change and pass after.",
                 data={"missing": missing},
+                annotations=[
+                    Annotation(path=src, message=f"expected a changed test matching {glob}")
+                    for src, glob in missing.items()
+                ],
             )
         return ok(f"tests changed for all {len(covered)} mapped source file(s)", details=covered[:10])
 

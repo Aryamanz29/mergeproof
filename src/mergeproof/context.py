@@ -36,6 +36,7 @@ class CheckRun(BaseModel):
     status: str
     conclusion: str | None = None
     url: str | None = None
+    started_at: str = ""
 
 
 class Context(BaseModel):

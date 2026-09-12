@@ -7,6 +7,7 @@ import respx
 
 from mergeproof.context import Context, ContextError
 from mergeproof.providers import git, github
+from mergeproof.report import Annotation, Status
 
 
 def sh(cwd, *args):
@@ -93,14 +94,24 @@ def test_fetch_builds_a_full_context():
     respx.get(f"{api}/repos/o/r/pulls/7/comments").mock(return_value=httpx.Response(200, json=[]))
     respx.get(f"{api}/repos/o/r/commits/{'a' * 40}/check-runs").mock(
         return_value=httpx.Response(
-            200, json={"check_runs": [{"name": "unit", "status": "completed", "conclusion": "success"}]}
+            200,
+            json={
+                "check_runs": [
+                    {
+                        "name": "unit",
+                        "status": "completed",
+                        "conclusion": "success",
+                        "started_at": "2026-01-01T00:00:00Z",
+                    }
+                ]
+            },
         )
     )
     ctx = github.fetch(github.Client("tok"), "o/r", 7)
     assert ctx.online and ctx.source == "github" and ctx.repo == "o/r" and ctx.number == 7
     assert ctx.labels == ["bug"] and ctx.head_short == "aaaaaaa"
     assert [c.kind for c in ctx.comments] == ["comment", "review"]
-    assert ctx.check_runs[0].conclusion == "success"
+    assert ctx.check_runs[0].conclusion == "success" and ctx.check_runs[0].started_at == "2026-01-01T00:00:00Z"
     assert ctx.evidence().get("environment") == "staging"
     assert Context.from_json(ctx.to_json()) == ctx
 
@@ -163,3 +174,47 @@ def test_step_summary_and_output_files(tmp_path, monkeypatch):
     github.write_step_summary("# hi")
     github.write_output("verdict", "pass")
     assert summary.read_text() == "# hi\n" and output.read_text() == "verdict=pass\n"
+
+
+@respx.mock
+def test_commit_status_and_check_run_payloads():
+    api = "https://api.github.com"
+    status = respx.post(f"{api}/repos/o/r/statuses/abc").mock(return_value=httpx.Response(201, json={}))
+    check = respx.post(f"{api}/repos/o/r/check-runs").mock(
+        return_value=httpx.Response(201, json={"html_url": "https://c/1"})
+    )
+    client = github.Client("tok")
+    github.set_commit_status(client, "o/r", "abc", Status.PENDING, "x" * 200, "https://run")
+    sent = json.loads(status.calls[0].request.content)
+    assert sent["state"] == "pending" and sent["context"] == "mergeproof"
+    assert len(sent["description"]) == 140 and sent["target_url"] == "https://run"
+
+    notes = [Annotation(path="src/a.py", message="expected a test")]
+    url = github.create_check_run(client, "o/r", "abc", Status.FAIL, "0 of 1", "## summary", notes, "https://run")
+    assert url == "https://c/1"
+    sent = json.loads(check.calls[0].request.content)
+    assert sent["conclusion"] == "failure" and sent["name"] == "mergeproof" and sent["details_url"] == "https://run"
+    note = sent["output"]["annotations"][0]
+    assert note == {
+        "path": "src/a.py",
+        "start_line": 1,
+        "end_line": 1,
+        "annotation_level": "failure",
+        "message": "expected a test",
+    }
+    for verdict, conclusion in (
+        (Status.PASS, "success"),
+        (Status.WARN, "neutral"),
+        (Status.PENDING, "action_required"),
+    ):
+        assert github.CHECK_CONCLUSION[verdict] == conclusion
+
+
+def test_run_url(monkeypatch):
+    for var in ("GITHUB_SERVER_URL", "GITHUB_REPOSITORY", "GITHUB_RUN_ID"):
+        monkeypatch.delenv(var, raising=False)
+    assert github.run_url() is None
+    monkeypatch.setenv("GITHUB_SERVER_URL", "https://github.com")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "o/r")
+    monkeypatch.setenv("GITHUB_RUN_ID", "9")
+    assert github.run_url() == "https://github.com/o/r/actions/runs/9"
