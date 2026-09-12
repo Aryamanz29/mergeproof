@@ -78,7 +78,7 @@ jobs:
           docker run --rm -v "$PWD":/repo mergeproof:ci check --local --base HEAD~1 || test $? -le 2
 
   gate:
-    name: 🛡️ gate
+    name: 🛡️ mergeproof gate
     if: github.event_name == 'pull_request'
     needs: [lint, unit, integration, docker]
     runs-on: ubuntu-latest
