@@ -8,7 +8,6 @@ mergeproof validate       check the policy file
 mergeproof init           write a starter policy
 mergeproof checks         list available checks and their parameters
 mergeproof agent-prompt   render an AGENTS.md section from the policy
-mergeproof mcp            serve the policy to coding agents over MCP (stdio)
 mergeproof context        print the pull request context as JSON      (plumbing)
 mergeproof report         render a JSON report in another format      (plumbing)
 mergeproof comment        post a JSON report to the pull request      (plumbing)
@@ -67,4 +66,3 @@ through the CLI and asserts the verdict each one claims.
 | `MERGEPROOF_REPO`, `MERGEPROOF_PR_NUMBER` | pull request for GitHub mode when there is no event payload |
 | `GITHUB_TOKEN` / `GH_TOKEN` | GitHub API token |
 | `GITHUB_API_URL` | for GitHub Enterprise |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | enables tracing of the MCP server (needs the `otel` extra) |

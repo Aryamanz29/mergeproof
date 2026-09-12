@@ -23,7 +23,7 @@ rules:
     description: A change to a module ships with a change to its tests.
     when:
       paths: ["src/mergeproof/**/*.py"]
-      exclude_paths: ["src/mergeproof/__init__.py", "src/mergeproof/__main__.py", "src/mergeproof/mcp_server.py"]
+      exclude_paths: ["src/mergeproof/__init__.py", "src/mergeproof/__main__.py"]
     require:
       - check: tests.changed
         name: unit tests touched
@@ -37,14 +37,6 @@ rules:
           ignore: ["src/mergeproof/checks/__init__.py", "src/mergeproof/checks/base.py", "src/mergeproof/checks/registry.py",
                    "src/mergeproof/verifiers/__init__.py", "src/mergeproof/verifiers/base.py", "src/mergeproof/render/__init__.py",
                    "src/mergeproof/providers/__init__.py", "src/mergeproof/report.py", "src/mergeproof/context.py"]
-
-  - id: mcp-server-has-integration-test
-    description: The MCP server is only tested end to end, so a change there touches that test.
-    when:
-      paths: ["src/mergeproof/mcp_server.py"]
-    require:
-      - check: tests.changed
-        with: { any_of: ["tests/integration/test_mcp.py"] }
 
   - id: examples-stay-runnable
     description: A changed example policy keeps or updates its scenarios.

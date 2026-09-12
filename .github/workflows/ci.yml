@@ -19,7 +19,7 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: pyproject.toml
-      - run: uv sync --extra mcp --extra otel --group dev
+      - run: uv sync --group dev
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run mypy
@@ -49,11 +49,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v3
-      - name: Build the wheel and install it into a clean environment with the MCP extra and the example plugin
+      - name: Build the wheel and install it into a clean environment with the example plugin
         run: |
           uv build
           uv venv .itenv
-          uv pip install --no-sources --python .itenv/bin/python "$(ls dist/*.whl)[mcp,otel]" ./examples/plugins/mergeproof-langfuse pytest anyio respx
+          uv pip install --no-sources --python .itenv/bin/python "$(ls dist/*.whl)" ./examples/plugins/mergeproof-langfuse pytest anyio respx
       - run: .itenv/bin/python -m pytest tests/integration -m integration -p no:cacheprovider
       - run: .itenv/bin/python -m pytest examples/plugins/mergeproof-langfuse/tests -p no:cacheprovider
         env:
@@ -76,8 +76,6 @@ jobs:
           docker run --rm mergeproof:ci --version
           docker run --rm -v "$PWD":/repo mergeproof:ci validate
           docker run --rm -v "$PWD":/repo mergeproof:ci check --local --base HEAD~1 || test $? -le 2
-          printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"smoke","version":"0"}}}\n' \
-            | docker run -i --rm -v "$PWD":/repo mergeproof:ci mcp | grep -q '"serverInfo"'
 
   gate:
     name: 🛡️ gate

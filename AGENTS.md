@@ -5,9 +5,8 @@ from `mergeproof.yaml` with `mergeproof agent-prompt`; edit the policy, not this
 
 ## Working here
 
-- `make setup` once, then `make lint typecheck test` before every push; `make integration` when you touch the CLI, examples, plugin or MCP server.
+- `make setup` once, then `make lint typecheck test` before every push; `make integration` when you touch the CLI, examples or plugin.
 - `mergeproof explain` shows what your change must prove. `mergeproof template` prints the evidence block still missing.
-- The MCP server is configured in `.mcp.json`; the `explain` and `check` tools give the same answers.
 - Style: small modules that do one thing, no decorative comment banners, pydantic models for parameters, one-sentence `explain()` per check, nothing vendor-specific in the core.
 - Do not add attribution trailers to commits.
 

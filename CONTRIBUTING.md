@@ -3,7 +3,7 @@
 ```sh
 make setup        # uv sync, example plugin, pre-commit hooks
 make lint typecheck test
-make integration  # slower: builds nothing, but spawns the CLI and the MCP server
+make integration  # slower: spawns the CLI against the examples and the plugin
 make check        # this repository's own gate, against your working tree
 ```
 

@@ -4,7 +4,7 @@ help:            ## show this help
 	@grep -E '^[a-z]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*## /\t/' | column -t -s "$$(printf '\t')"
 
 setup:           ## create the virtualenv, install everything, install git hooks
-	uv sync --extra mcp --extra otel --group dev
+	uv sync --group dev
 	uv pip install -e examples/plugins/mergeproof-langfuse
 	uv run pre-commit install --install-hooks
 
@@ -22,7 +22,7 @@ typecheck:       ## mypy over src
 test:            ## unit tests with coverage
 	uv run pytest tests/unit --cov --cov-report=term-missing
 
-integration:     ## drive the installed CLI, examples, plugin and MCP server
+integration:     ## drive the installed CLI, examples and plugin
 	uv run pytest tests/integration examples/plugins/mergeproof-langfuse/tests -m "integration or not integration"
 
 check:           ## run this repository's own gate against the working tree
