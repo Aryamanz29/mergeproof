@@ -17,11 +17,17 @@ inputs:
   comment:
     description: Create or update the sticky PR comment
     default: "true"
+  status:
+    description: Set the `mergeproof` commit status (needs statuses:write); require it in branch protection
+    default: "true"
+  check-run:
+    description: Create a Check Run with file annotations (needs checks:write)
+    default: "true"
   pending-ok:
     description: Succeed while evidence is still pending instead of failing the check
     default: "false"
   github-token:
-    description: Token with pull-requests:write and checks:read
+    description: Token with pull-requests:write, statuses:write, checks:write
     default: ${{ github.token }}
 
 outputs:
@@ -44,6 +50,8 @@ runs:
       run: |
         args=(check --github --policy "${{ inputs.policy }}" --output mergeproof-report.json)
         [ "${{ inputs.comment }}" = "true" ] && args+=(--comment)
+        [ "${{ inputs.status }}" = "true" ] && args+=(--status)
+        [ "${{ inputs.check-run }}" = "true" ] && args+=(--check-run)
         set +e
         mergeproof "${args[@]}"
         code=$?

@@ -87,7 +87,8 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-      checks: read
+      statuses: write
+      checks: write
     steps:
       - uses: actions/checkout@v4
       - uses: ./

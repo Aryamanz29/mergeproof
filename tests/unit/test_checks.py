@@ -27,6 +27,14 @@ class TestTestsChanged:
         assert out.status == Status.FAIL
         assert out.data["missing"] == {"src/api/users.py": "tests/**/test_users*.py"}
 
+    def test_missing_tests_are_annotated_on_the_source_file(self):
+        ctx = make_context(files=["src/api/users.py"])
+        out = run_check(TestsChanged(), ctx, map=MAP)
+        assert [a.path for a in out.annotations] == ["src/api/users.py"]
+        assert out.annotations[0].line == 1 and "tests/**/test_users*.py" in out.annotations[0].message
+        covered = make_context(files=["src/api/users.py", "tests/test_users.py"])
+        assert run_check(TestsChanged(), covered, map=MAP).annotations == []
+
     def test_pass_skip_and_ignore(self):
         ctx = make_context(files=["src/api/users.py", "tests/unit/api/test_users_extra.py"])
         assert run_check(TestsChanged(), ctx, map=MAP).status == Status.PASS
@@ -158,6 +166,22 @@ class TestCiJobPassed:
         assert run_check(CiJobPassed(), ctx, name="missing", missing="fail").status == Status.FAIL
         assert run_check(CiJobPassed(), ctx, name="unit (3.12)", min_matches=2).status == Status.FAIL
         assert run_check(CiJobPassed(), make_context(online=False), name="lint").status == Status.PENDING
+
+    def test_only_the_newest_run_per_name_counts(self):
+        runs = [
+            CheckRun(name="unit (3.12)", status="completed", conclusion="cancelled", started_at="2026-01-01T10:00:00Z"),
+            CheckRun(name="unit (3.12)", status="completed", conclusion="success", started_at="2026-01-01T10:05:00Z"),
+            CheckRun(name="integration", status="completed", conclusion="success", started_at="2026-01-01T10:00:00Z"),
+            CheckRun(name="integration", status="in_progress", started_at="2026-01-01T10:05:00Z"),
+        ]
+        ctx = make_context(check_runs=runs)
+        assert run_check(CiJobPassed(), ctx, name="unit (3.12)").status == Status.PASS
+        assert run_check(CiJobPassed(), ctx, name="integration").status == Status.PENDING
+        superseded_failure = [
+            CheckRun(name="lint", status="completed", conclusion="failure", started_at="2026-01-01T10:00:00Z"),
+            CheckRun(name="lint", status="completed", conclusion="success", started_at="2026-01-01T10:09:00Z"),
+        ]
+        assert run_check(CiJobPassed(), make_context(check_runs=superseded_failure), name="lint").status == Status.PASS
 
 
 class TestHumanVerified:

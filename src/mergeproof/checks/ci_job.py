@@ -1,4 +1,9 @@
-"""A named check run on the head commit succeeded."""
+"""A named check run on the head commit succeeded.
+
+A commit can carry several check runs with the same name: re-runs, and runs a
+concurrency group cancelled when a newer push arrived. Only the newest run per
+name says anything about the commit, so that is the one that counts.
+"""
 
 from __future__ import annotations
 
@@ -7,8 +12,17 @@ import re
 from pydantic import BaseModel, ConfigDict, Field
 
 from mergeproof.checks.base import Check, fail, ok, pending
-from mergeproof.context import Context
+from mergeproof.context import CheckRun, Context
 from mergeproof.report import Outcome
+
+
+def newest_per_name(runs: list[CheckRun]) -> list[CheckRun]:
+    latest: dict[str, CheckRun] = {}
+    for run in runs:
+        current = latest.get(run.name)
+        if current is None or run.started_at > current.started_at:
+            latest[run.name] = run
+    return list(latest.values())
 
 
 class CiJobPassed(Check):
@@ -32,6 +46,7 @@ class CiJobPassed(Check):
             runs = [r for r in ctx.check_runs if wanted.search(r.name)]
         else:
             runs = [r for r in ctx.check_runs if r.name == params.name]
+        runs = newest_per_name(runs)
         if not runs:
             message = f"no check run named `{params.name}` on {ctx.head_short or 'the head commit'}"
             return fail(message) if params.missing == "fail" else pending(message)

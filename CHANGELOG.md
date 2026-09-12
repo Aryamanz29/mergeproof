@@ -7,6 +7,14 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 - Container image `ghcr.io/aryamanz29/mergeproof` with the CLI and MCP server; `:edge` on every push to main, version tags and `:latest` on releases.
+- Reporting through the commit status (`--status`) and a Check Run with file annotations (`--check-run`); the action enables both by default.
+
+### Changed
+- `ci.job_passed` considers only the newest check run per name, so runs cancelled by a newer push no longer count as failures.
+- The PR comment leads with a headline count, caps details, and carries the evaluation time.
+
+### Added
+- Container image `ghcr.io/aryamanz29/mergeproof` with the CLI and MCP server; published on every release tag.
 - `mergeproof[otel]`: the MCP server exports OpenTelemetry spans over OTLP/HTTP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set (Langfuse, Jaeger, Phoenix, any collector).
 ### Changed
 - `mergeproof checks` marks checks that only produce results in GitHub mode.

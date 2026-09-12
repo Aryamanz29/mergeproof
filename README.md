@@ -165,7 +165,7 @@ jobs:
   gate:
     if: github.event_name != 'issue_comment' || github.event.issue.pull_request
     runs-on: ubuntu-latest
-    permissions: { contents: read, pull-requests: write, checks: read }
+    permissions: { contents: read, pull-requests: write, statuses: write, checks: write }
     steps:
       - uses: actions/checkout@v4
         with: { ref: ${{ github.event.repository.default_branch }} }   # policy from the base branch
@@ -174,7 +174,53 @@ jobs:
           MERGEPROOF_PR_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
 ```
 
-Make the `mergeproof` check required in branch protection and the gate is enforced.
+The action reports in three places, each switchable: the sticky comment above, a **commit status**
+named `mergeproof` in the merge box with the headline (`3 of 5 requirements satisfied, 2 pending`),
+and a **Check Run** in the Checks tab whose annotations land on the files concerned, for example
+"expected a changed test matching tests/**/test_search*.py" on `server/tools/search.py`. Require
+the `mergeproof` status in branch protection and the gate is enforced.
+
+None of this blocks a merge until the repository says so. GitHub merges anything unless a
+ruleset requires specific checks (rulesets need a public repository or a paid plan), so create
+one that requires the `mergeproof` status next to the CI jobs you already trust:
+
+```sh
+gh api -X POST repos/OWNER/REPO/rulesets --input ruleset.json
+```
+
+```json
+{ "name": "main: pull requests with evidence", "target": "branch", "enforcement": "active",
+  "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] } },
+  "rules": [
+    { "type": "pull_request", "parameters": { "required_approving_review_count": 0,
+        "dismiss_stale_reviews_on_push": true, "require_code_owner_review": false,
+        "require_last_push_approval": false, "required_review_thread_resolution": false } },
+    { "type": "required_status_checks", "parameters": { "strict_required_status_checks_policy": false,
+        "required_status_checks": [ { "context": "mergeproof" }, { "context": "unit" } ] } } ] }
+```
+
+With `pending-ok: "true"` the workflow job stays green while evidence is outstanding, but the
+`mergeproof` status stays `pending`, and a pending required status blocks the merge button. That
+split is deliberate: the job says the tool ran, the status says whether the evidence is there.
+
+By default all three appear under `github-actions[bot]` with GitHub's avatar. To have them show
+as **mergeproof** with the shield, create a GitHub App named mergeproof (avatar `docs/logo.svg`,
+permissions: pull requests write, checks write, commit statuses write), install it on the repo,
+and mint its token in the workflow:
+
+```yaml
+      - uses: actions/create-github-app-token@v1
+        id: app
+        with:
+          app-id: ${{ vars.MERGEPROOF_APP_ID }}
+          private-key: ${{ secrets.MERGEPROOF_APP_KEY }}
+      - uses: Aryamanz29/mergeproof@v0.2.0
+        with:
+          github-token: ${{ steps.app.outputs.token }}
+```
+
+The comment, the status and the Check Run are then attributed to the app, and a later push from
+the app's token does not trigger workflows recursively, which the default token would not either.
 
 ## Built-in checks
 
