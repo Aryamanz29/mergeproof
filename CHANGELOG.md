@@ -4,6 +4,26 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). From 0.2.0 on, entries are generated
 by release-please from Conventional Commit messages.
 
+## [0.3.0](https://github.com/Aryamanz29/mergeproof/compare/v0.2.0...v0.3.0) (2026-09-12)
+
+
+### Added
+
+* **report:** shield mark on check and status rows, and on the job name ([0fbb1d3](https://github.com/Aryamanz29/mergeproof/commit/0fbb1d330a6fc214f9614742ff063cf5cc749e3a))
+* **report:** shield mark on the check, status and job rows ([b840382](https://github.com/Aryamanz29/mergeproof/commit/b8403828d52678be123e8ebf3c4eadb46ca303b5))
+
+
+### Fixed
+
+* **report:** keep the commit status description plain ([408cef7](https://github.com/Aryamanz29/mergeproof/commit/408cef7f7a8aa25bb7c93b61f5aee75c24d5c589))
+
+
+### Documentation
+
+* format the Python samples the way ruff wants ([a9cb946](https://github.com/Aryamanz29/mergeproof/commit/a9cb9469f72523251b0c1a995104d7797659c08d))
+* short README with reference pages under docs/ ([7182fd5](https://github.com/Aryamanz29/mergeproof/commit/7182fd5a6530f65807a0704ebf979a29dfdd9729))
+* short README, reference pages under docs/ ([5250153](https://github.com/Aryamanz29/mergeproof/commit/5250153db2eda535a0e89747d3353d52508fb4d4))
+
 ## [Unreleased]
 
 ## [0.2.0] - 2026-09-13

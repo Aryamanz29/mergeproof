@@ -1,6 +1,6 @@
 [project]
 name = "mergeproof"
-version = "0.2.0"
+version = "0.3.0"
 description = "Evidence gates for pull requests: declare what a change must prove, enforce it in CI, explain it to agents."
 readme = "README.md"
 requires-python = ">=3.11"
