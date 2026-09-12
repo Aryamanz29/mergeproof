@@ -31,8 +31,12 @@ the release process:
    opens or updates a single pull request titled `chore(main): release X.Y.Z`. The PR bumps the
    version in `pyproject.toml` and `src/mergeproof/__init__.py` and writes the `CHANGELOG.md`
    entry from the commits since the last release. `feat` bumps the minor version, `fix` the
-   patch, a breaking change the major (minor while still 0.x).
+   patch, a breaking change the major (minor while still 0.x). Squash-merge with the PR title as
+   the commit subject; that title is the changelog line.
 2. Review the generated changelog like any other PR; edit it in the PR if a line reads badly.
+   With a `RELEASE_PLEASE_TOKEN` repository secret (a fine-grained personal access token with
+   contents and pull requests read and write) the PR is opened as a person and CI starts on it;
+   without it, close and reopen the PR once and the checks run.
 3. Merging that PR creates the `vX.Y.Z` tag and the GitHub Release.
 4. The tag triggers `release.yml` (wheel and sdist to PyPI through trusted publishing, attached to
    the GitHub Release) and `image.yml` (`ghcr.io/aryamanz29/mergeproof:X.Y.Z`, `:X.Y`, `:X`,

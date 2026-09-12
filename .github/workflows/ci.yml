@@ -91,20 +91,11 @@ jobs:
       checks: write
     steps:
       - uses: actions/checkout@v4
-      # With the mergeproof GitHub App configured (MERGEPROOF_APP_ID variable, MERGEPROOF_APP_KEY
-      # secret), the comment, status and check run are posted as "mergeproof" with its avatar.
-      - uses: actions/create-github-app-token@v1
-        id: app
-        if: ${{ vars.MERGEPROOF_APP_ID != '' }}
-        with:
-          app-id: ${{ vars.MERGEPROOF_APP_ID }}
-          private-key: ${{ secrets.MERGEPROOF_APP_KEY }}
       - uses: ./
         id: gate
         with:
           version: "."
           pending-ok: "true"
-          github-token: ${{ steps.app.outputs.token || github.token }}
       - name: Render the requirements as a test report
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always() && hashFiles('mergeproof-junit.xml') != ''
