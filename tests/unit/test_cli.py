@@ -162,3 +162,36 @@ def test_publish_calls_each_channel(tmp_path, monkeypatch, capsys):
     assert calls == ["comment", "check", "status"]
     err = capsys.readouterr().err
     assert "comment at https://c/1" in err and "commit status success" in err
+
+
+def test_check_publishes_each_requested_channel(tmp_path, monkeypatch, capsys):
+    from mergeproof.providers import github
+
+    context = tmp_path / "ctx.json"
+    context.write_text(
+        json.dumps(
+            {
+                "source": "github",
+                "online": True,
+                "repo": "o/r",
+                "number": 3,
+                "head_sha": "a" * 40,
+                "title": "docs",
+                "files": [{"path": "README.md", "status": "modified"}],
+            }
+        )
+    )
+    policy = tmp_path / "mergeproof.yaml"
+    policy.write_text("rules:\n  - id: r\n    require: [{check: pr.labels, with: {none_of: [wip]}}]\n")
+    calls = []
+    monkeypatch.setattr(github, "client_from_env", lambda: object())
+    monkeypatch.setattr(github, "upsert_comment", lambda *a: calls.append("comment") or "https://c/1")
+    monkeypatch.setattr(github, "set_commit_status", lambda *a: calls.append("status"))
+    monkeypatch.setattr(github, "create_check_run", lambda *a: calls.append("check") or "https://k/1")
+    assert run("check", "--context", context, "-p", policy, "-q", "--status") == 0
+    assert calls == ["status"]
+    calls.clear()
+    assert run("check", "--context", context, "-p", policy, "-q", "--comment", "--check-run") == 0
+    assert calls == ["comment", "check"]
+    assert run("check", "--context", context, "-p", policy, "-q") == 0
+    assert calls == ["comment", "check"]

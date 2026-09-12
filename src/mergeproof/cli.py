@@ -159,8 +159,8 @@ def cmd_check(args: argparse.Namespace) -> int:
         print(emit(report, args.format))
     github.write_step_summary(render.report_markdown(report))
     github.write_output("verdict", report.verdict.value)
-    if args.comment:
-        publish(report)
+    if args.comment or args.status or args.check_run:
+        publish(report, comment=args.comment, status=args.status, check_run=args.check_run)
     return report.exit_code
 
 
