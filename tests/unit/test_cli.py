@@ -105,13 +105,16 @@ def test_explain_template_and_helpers(repo, capsys, tmp_path):
     assert "tests.changed\n" in listing and "PydanticUndefined" not in listing
 
 
-def test_workflow_commands_are_printed_inside_actions(repo, capsys, monkeypatch):
+def test_workflow_commands_ride_with_text_output_only(repo, capsys, monkeypatch):
     monkeypatch.setenv("GITHUB_ACTIONS", "true")
     monkeypatch.delenv("GITHUB_EVENT_PATH", raising=False)
-    code = run("check", "--local", "--base", "main", "--root", repo, "-p", repo / "mergeproof.yaml", "-q")
-    assert code == 1
-    out = capsys.readouterr().out
-    assert "::error title=mergeproof::" in out
+    policy = repo / "mergeproof.yaml"
+    assert run("check", "--local", "--base", "main", "--root", repo, "-p", policy) == 1
+    assert "::error title=mergeproof::" in capsys.readouterr().out
+    assert run("check", "--local", "--base", "main", "--root", repo, "-p", policy, "-f", "json") == 1
+    json.loads(capsys.readouterr().out)
+    assert run("check", "--local", "--base", "main", "--root", repo, "-p", policy, "-q") == 1
+    assert capsys.readouterr().out == ""
 
 
 def test_usage_errors_exit_3(repo, capsys, tmp_path, tmp_path_factory):
