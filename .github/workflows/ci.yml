@@ -62,6 +62,7 @@ jobs:
   gate:
     name: mergeproof (this repo's own policy)
     if: github.event_name == 'pull_request'
+    needs: [lint, unit, integration]
     runs-on: ubuntu-latest
     permissions:
       contents: read
