@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Container image `ghcr.io/aryamanz29/mergeproof` with the CLI and MCP server; `:edge` on every push to main, version tags and `:latest` on releases.
 - Reporting through the commit status (`--status`) and a Check Run with file annotations (`--check-run`); the action enables both by default.
 
 ### Changed
