@@ -232,7 +232,7 @@ def cmd_init(args: argparse.Namespace) -> int:
 
 def cmd_checks(args: argparse.Namespace) -> int:
     for check_id, cls in load_registry().items():
-        print(check_id)
+        print(check_id + ("  (GitHub mode only)" if cls.needs_github else ""))
         print(f"    {cls.description}")
         for name, field in cls.Params.model_fields.items():
             if field.is_required():

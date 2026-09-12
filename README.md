@@ -1,11 +1,19 @@
-# mergeproof
+<p align="center">
+  <img src="docs/logo.svg" alt="mergeproof" width="128">
+</p>
 
-**Proof before merge.** Pull requests earn their merge with evidence, not claims.
+<h1 align="center">mergeproof</h1>
+
+<p align="center"><strong>Proof before merge.</strong> Pull requests earn their merge with evidence, not claims.</p>
+
+<p align="center">
 
 [![CI](https://github.com/Aryamanz29/mergeproof/actions/workflows/ci.yml/badge.svg)](https://github.com/Aryamanz29/mergeproof/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/mergeproof)](https://pypi.org/project/mergeproof/)
 [![Python](https://img.shields.io/pypi/pyversions/mergeproof)](https://pypi.org/project/mergeproof/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+</p>
 
 `mergeproof` is an evidence gate for pull requests. One YAML file says what a change must
 *prove* before it merges: tests for the modules it touched, a green integration job,
@@ -53,7 +61,7 @@ mergeproof check         # the gate: exit 0 pass, 1 fail, 2 pending
 
 `explain` on a branch that changed a tool module and nothing else:
 
-```text
+````text
 # What this change must prove (fail)
 
 ## tool-change-needs-unit-tests [block]
@@ -80,7 +88,7 @@ traces:
   before: https://langfuse.example.com/project/<project-id>/traces/<trace-id>
   after: https://langfuse.example.com/project/<project-id>/traces/<trace-id>
 ```
-```
+````
 
 ## The policy file
 
@@ -231,22 +239,123 @@ agent already speaks in labels (`reviewed` / `review-failed`), `pr.labels` consu
 
 ## For coding agents
 
-Two ways to hand agents the rules, both generated from the policy so they cannot drift:
+Agents get the rules two ways. Both are generated from the policy, so what an agent reads is
+what CI enforces.
+
+**A Markdown section** for `AGENTS.md` or `CLAUDE.md`:
 
 ```sh
-mergeproof agent-prompt >> AGENTS.md     # a Markdown section describing every rule and its evidence block
-mergeproof mcp                           # an MCP server over stdio
+mergeproof agent-prompt >> AGENTS.md
 ```
 
-`.mcp.json` for Claude Code, Cursor or any MCP client:
+It lists every rule, when it applies, what satisfies each requirement, and the evidence block
+to fill in, followed by three rules for agents: never fabricate evidence, never post the human
+verification phrase, keep the evidence block plain YAML.
+
+**An MCP server** over stdio, for agents that can call tools:
+
+```sh
+pip install 'mergeproof[mcp]'
+mergeproof mcp --policy mergeproof.yaml        # what the client launches
+```
+
+Register it once per repository. Claude Code reads `.mcp.json` at the repo root; Cursor and
+other clients take the same command and arguments in their own settings file:
 
 ```json
-{ "mcpServers": { "mergeproof": { "command": "uv", "args": ["run", "mergeproof", "mcp"] } } }
+{
+  "mcpServers": {
+    "mergeproof": { "command": "mergeproof", "args": ["mcp", "--policy", "mergeproof.yaml"] }
+  }
+}
 ```
 
-Tools: `explain`, `check`, `evidence_block`, `validate_policy`, `list_checks`,
-`agent_instructions`; resource `mergeproof://policy`. All read-only. An agent can learn what to
-prove and check its own work; it cannot approve anything.
+The server exposes six tools and one resource:
+
+| tool | arguments | returns | an agent calls it to |
+|---|---|---|---|
+| `explain` | `pr_title?`, `pr_body?` | `verdict`, `markdown`, `evidence_template` | learn what the current diff must prove, and what is already covered, before writing more code |
+| `check` | `pr_title?`, `pr_body?` | `verdict`, `exit_code`, the full JSON report | dry-run the gate against the working tree with the PR description it is about to submit |
+| `evidence_block` | `data` (mapping) | the fenced block as text | format the evidence for the PR description instead of hand-writing YAML |
+| `validate_policy` | `text?` | `ok`, `problems`, `rules` | edit `mergeproof.yaml` safely; without `text` it validates the repo's file |
+| `list_checks` | none | id, description and parameter schema for every check, plugins included | write or change rules with the right check ids and parameter names |
+| `agent_instructions` | none | the same Markdown `agent-prompt` prints | refresh the rules mid-session |
+
+Resource `mergeproof://policy` is the policy file itself.
+
+Everything is read-only against the working tree. The server cannot post comments, add labels,
+or produce the human sign-off; an agent can find out what to prove and check its own work, and
+that is all. A typical session:
+
+```mermaid
+sequenceDiagram
+    participant A as Coding agent
+    participant M as mergeproof mcp
+    participant G as GitHub
+    A->>M: explain()
+    M-->>A: fail: tests missing for tools/search.py, evidence block missing
+    A->>A: write the regression test, reproduce on staging, keep both trace links
+    A->>M: evidence_block({environment, image, traces})
+    M-->>A: fenced evidence block
+    A->>M: check(pr_body)
+    M-->>A: pending: only CI status and reviewer sign-off remain
+    A->>G: open the PR with that description
+    G->>G: CI runs mergeproof check --github --comment
+    Note over G: a human opens the traces and posts /verified sha7
+```
+
+The CLI and the server answer the same questions:
+
+| CLI | MCP tool |
+|---|---|
+| `mergeproof explain` | `explain` |
+| `mergeproof check --body-file FILE` | `check` |
+| `mergeproof template` | `explain`, field `evidence_template` |
+| `mergeproof validate` | `validate_policy` |
+| `mergeproof checks` | `list_checks` |
+| `mergeproof agent-prompt` | `agent_instructions` |
+
+### Tracing the server itself
+
+The MCP SDK wraps every tool call in an OpenTelemetry span. Install the `otel` extra and point the
+standard variables at any OTLP/HTTP receiver and those spans are exported; nothing is sent
+otherwise.
+
+```sh
+pip install 'mergeproof[mcp,otel]'
+
+# Langfuse (self-hosted or cloud): basic auth with the project keys
+export OTEL_EXPORTER_OTLP_ENDPOINT=https://langfuse.example.com/api/public/otel
+export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Basic $(printf '%s:%s' "$LANGFUSE_PUBLIC_KEY" "$LANGFUSE_SECRET_KEY" | base64)"
+
+# Jaeger or an OpenTelemetry Collector on the default OTLP/HTTP port
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+```
+
+Each span is named after the MCP method and tool (`tools/call explain`) and carries the
+`gen_ai.tool.name` attribute, so a dashboard can answer "which agent asked what, and how often did
+`check` come back failing" without any code in this project knowing which backend it talks to.
+
+### Tracing the server itself
+
+The MCP SDK wraps every tool call in an OpenTelemetry span. Install the `otel` extra and point the
+standard variables at any OTLP/HTTP receiver and those spans are exported; nothing is sent
+otherwise.
+
+```sh
+pip install 'mergeproof[mcp,otel]'
+
+# Langfuse (self-hosted or cloud): basic auth with the project keys
+export OTEL_EXPORTER_OTLP_ENDPOINT=https://langfuse.example.com/api/public/otel
+export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Basic $(printf '%s:%s' "$LANGFUSE_PUBLIC_KEY" "$LANGFUSE_SECRET_KEY" | base64)"
+
+# Jaeger or an OpenTelemetry Collector on the default OTLP/HTTP port
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+```
+
+Each span is named after the MCP method and tool (`tools/call explain`) and carries the
+`gen_ai.tool.name` attribute, so a dashboard can answer "which agent asked what, and how often did
+`check` come back failing" without any code in this project knowing which backend it talks to.
 
 ## Plumbing
 
