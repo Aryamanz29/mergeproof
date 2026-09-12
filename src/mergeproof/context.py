@@ -52,6 +52,7 @@ class Context(BaseModel):
     head_sha: str | None = None
     base_sha: str | None = None
     root: str = "."
+    has_checkout: bool = True
     files: list[ChangedFile] = Field(default_factory=list)
     comments: list[Comment] = Field(default_factory=list)
     check_runs: list[CheckRun] = Field(default_factory=list)

@@ -2,6 +2,8 @@
 #
 #   docker run --rm -v "$PWD":/repo ghcr.io/aryamanz29/mergeproof check --local
 #   docker run -i --rm -v "$PWD":/repo ghcr.io/aryamanz29/mergeproof mcp
+#   docker run --rm -p 8080:8080 -e MERGEPROOF_APP_ID -e MERGEPROOF_APP_PRIVATE_KEY -e MERGEPROOF_WEBHOOK_SECRET \
+#       ghcr.io/aryamanz29/mergeproof serve
 #
 # The repository is expected at /repo (the working directory). git is included because the
 # local provider reads the diff from it.
@@ -21,11 +23,12 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/* \
  && useradd --create-home --uid 1000 mergeproof
 COPY --from=build /wheels /wheels
-RUN pip install --no-cache-dir --quiet "$(ls /wheels/*.whl)[mcp,otel]" && rm -rf /wheels
+RUN pip install --no-cache-dir --quiet "$(ls /wheels/*.whl)[mcp,otel,app]" && rm -rf /wheels
 # Mounted repositories are usually owned by a different uid than the container user.
 ENV GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0=* \
     PYTHONUNBUFFERED=1 MERGEPROOF_POLICY=mergeproof.yaml
 USER mergeproof
 WORKDIR /repo
+EXPOSE 8080
 ENTRYPOINT ["mergeproof"]
 CMD ["--help"]

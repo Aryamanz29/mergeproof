@@ -166,7 +166,7 @@ def test_publish_calls_each_channel(tmp_path, monkeypatch, capsys):
     assert run("comment", path, "--status", "--check-run") == 0
     assert calls == ["comment", "check", "status"]
     err = capsys.readouterr().err
-    assert "comment at https://c/1" in err and "commit status success" in err
+    assert "comment https://c/1" in err and "check run https://k/1" in err and "status success" in err
 
 
 def test_check_publishes_each_requested_channel(tmp_path, monkeypatch, capsys):

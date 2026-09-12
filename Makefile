@@ -4,7 +4,7 @@ help:            ## show this help
 	@grep -E '^[a-z]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*## /\t/' | column -t -s "$$(printf '\t')"
 
 setup:           ## create the virtualenv, install everything, install git hooks
-	uv sync --extra mcp --extra otel --group dev
+	uv sync --extra mcp --extra otel --extra app --group dev
 	uv pip install -e examples/plugins/mergeproof-langfuse
 	uv run pre-commit install --install-hooks
 

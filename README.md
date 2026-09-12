@@ -203,6 +203,59 @@ With `pending-ok: "true"` the workflow job stays green while evidence is outstan
 `mergeproof` status stays `pending`, and a pending required status blocks the merge button. That
 split is deliberate: the job says the tool ran, the status says whether the evidence is there.
 
+### Run as a GitHub App, no workflow in the gated repository
+
+The action needs a workflow file in every repository. The same gate can run once, as a GitHub App
+you host, and be installed on any repository that has a `mergeproof.yaml`. The server receives
+webhooks, authenticates as the App, reads the policy from the pull request's base branch, and
+publishes the comment, status and check run under the App's name and avatar.
+
+| | action | App |
+|---|---|---|
+| per-repository setup | workflow file + policy | install the App + policy |
+| identity on the PR | `github-actions`, or the App with a minted token | the App |
+| `shell` checks, repo-local tooling | yes | no (no checkout) |
+| verifier credentials | repository secrets | server environment |
+| hosting | none | one small container |
+
+**1. Create the App** at Settings, Developer settings, GitHub Apps, New GitHub App:
+
+| field | value |
+|---|---|
+| Name, homepage, logo | mergeproof, this repository, `docs/logo.png` |
+| Webhook | Active; URL `https://<your host>/webhook`; a secret you generate |
+| Repository permissions | Checks: read and write. Commit statuses: read and write. Pull requests: read and write. Contents: read. Metadata: read |
+| Subscribe to events | Pull request, Pull request review, Issue comment, Check suite, Check run |
+| Where can this App be installed | Any account, if other people should install it |
+
+Note the App ID, generate a private key, keep the webhook secret.
+
+**2. Run the server** anywhere that runs a container and has a public URL:
+
+```sh
+docker run --rm -p 8080:8080 \
+  -e MERGEPROOF_APP_ID=<app id> \
+  -e MERGEPROOF_APP_PRIVATE_KEY="$(cat mergeproof.private-key.pem)" \
+  -e MERGEPROOF_WEBHOOK_SECRET=<secret> \
+  ghcr.io/aryamanz29/mergeproof serve
+```
+
+On Google Cloud Run, which scales to zero and fits the free tier:
+
+```sh
+gcloud run deploy mergeproof --image ghcr.io/aryamanz29/mergeproof:0 --args serve \
+  --port 8080 --allow-unauthenticated --region europe-west1 \
+  --set-env-vars MERGEPROOF_APP_ID=<app id> \
+  --set-secrets MERGEPROOF_APP_PRIVATE_KEY=mergeproof-key:latest,MERGEPROOF_WEBHOOK_SECRET=mergeproof-webhook:latest
+```
+
+Without a container: `pip install 'mergeproof[app]'` and `mergeproof serve`. `GET /healthz` answers
+for load balancers. `MERGEPROOF_APP_PRIVATE_KEY_FILE` can replace the inline key.
+
+**3. Install the App** on a repository, add `mergeproof.yaml` to its default branch, and require
+the `mergeproof` status in that repository's ruleset. Repositories without a policy file are left
+alone. A pull request cannot change its own rules: the policy is read from the base branch.
+
 ### Rendering with tools you already use
 
 The action also writes the report as **JUnit XML** (`mergeproof-junit.xml`, one suite per rule,

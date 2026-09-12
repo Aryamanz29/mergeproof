@@ -11,7 +11,7 @@ import subprocess
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from mergeproof.checks.base import Check, error, fail, ok
+from mergeproof.checks.base import Check, error, fail, ok, skip
 from mergeproof.context import Context
 from mergeproof.report import Outcome
 
@@ -32,6 +32,8 @@ class Shell(Check):
         tail: int = Field(default=20, description="Trailing output lines kept in the report")
 
     def run(self, ctx: Context, params: Params, files: list[str]) -> Outcome:
+        if not ctx.has_checkout:
+            return skip("needs a checkout; not available when mergeproof runs as a GitHub App")
         env = os.environ | params.env
         env["MERGEPROOF_FILES"] = "\n".join(files)
         env["MERGEPROOF_HEAD_SHA"] = ctx.head_sha or ""

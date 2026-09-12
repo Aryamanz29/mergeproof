@@ -9,7 +9,7 @@ from typing import Any
 import httpx
 
 from mergeproof.context import ChangedFile, CheckRun, Comment, Context, ContextError
-from mergeproof.report import Annotation, Status
+from mergeproof.report import Annotation, Report, Status
 
 API_URL = "https://api.github.com"
 
@@ -236,3 +236,46 @@ def create_check_run(
 def run_url() -> str | None:
     server, repo, run_id = (os.environ.get(k) for k in ("GITHUB_SERVER_URL", "GITHUB_REPOSITORY", "GITHUB_RUN_ID"))
     return f"{server}/{repo}/actions/runs/{run_id}" if server and repo and run_id else None
+
+
+def publish_report(
+    client: Client,
+    report: Report,
+    *,
+    comment: bool = True,
+    status: bool = False,
+    check_run: bool = False,
+    run_url: str | None = None,
+) -> dict[str, str]:
+    """Publish a report to its pull request through whichever channels are asked for.
+
+    The comment links to the run, the status and the check run link to the comment when there is
+    one. Returns what was published, keyed by channel.
+    """
+    from mergeproof import render
+
+    if not report.repo or report.number is None or not report.head_sha:
+        raise ValueError("the report does not identify a pull request")
+    published: dict[str, str] = {}
+    link = run_url
+    if comment:
+        url = upsert_comment(
+            client,
+            report.repo,
+            report.number,
+            render.report_markdown(report, run_url=run_url),
+            render.MARKER,
+            create=bool(report.matched),
+        )
+        if url:
+            published["comment"] = url
+            link = url
+    if check_run:
+        summary = render.report_markdown(report, marker=False, run_url=run_url)
+        published["check_run"] = create_check_run(
+            client, report.repo, report.head_sha, report.verdict, report.headline(), summary, report.annotations(), link
+        )
+    if status:
+        set_commit_status(client, report.repo, report.head_sha, report.verdict, report.headline(), link)
+        published["status"] = STATUS_STATE[report.verdict]
+    return published

@@ -174,41 +174,21 @@ def publish(report: Report, comment: bool = True, status: bool = False, check_ru
     if report.source != "github" or not report.repo or report.number is None or not report.head_sha:
         print("mergeproof: publishing needs a GitHub context; skipping", file=sys.stderr)
         return
-    link = github.run_url()
     try:
-        client = github.client_from_env()
-        if comment:
-            url = github.upsert_comment(
-                client,
-                report.repo,
-                report.number,
-                render.report_markdown(report, run_url=link),
-                render.MARKER,
-                create=bool(report.matched),
-            )
-            link = url or link
-            print(
-                f"mergeproof: comment at {url}" if url else "mergeproof: no rules apply; no comment posted",
-                file=sys.stderr,
-            )
-        if check_run:
-            summary = render.report_markdown(report, marker=False, run_url=link)
-            url = github.create_check_run(
-                client,
-                report.repo,
-                report.head_sha,
-                report.verdict,
-                report.headline(),
-                summary,
-                report.annotations(),
-                link,
-            )
-            print(f"mergeproof: check run at {url}", file=sys.stderr)
-        if status:
-            github.set_commit_status(client, report.repo, report.head_sha, report.verdict, report.headline(), link)
-            print(f"mergeproof: commit status {github.STATUS_STATE[report.verdict]}", file=sys.stderr)
+        published = github.publish_report(
+            github.client_from_env(),
+            report,
+            comment=comment,
+            status=status,
+            check_run=check_run,
+            run_url=github.run_url(),
+        )
     except (ContextError, httpx.HTTPError) as exc:
         die(f"could not publish the report: {exc}")
+    if comment and "comment" not in published:
+        print("mergeproof: no rules apply; no comment posted", file=sys.stderr)
+    for channel, value in published.items():
+        print(f"mergeproof: {channel.replace('_', ' ')} {value}", file=sys.stderr)
 
 
 def cmd_explain(args: argparse.Namespace) -> int:
@@ -305,6 +285,18 @@ def cmd_template(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_serve(args: argparse.Namespace) -> int:
+    try:
+        from mergeproof.github_app import serve
+    except ImportError:
+        die("the GitHub App server needs the optional dependency: pip install 'mergeproof[app]'")
+    try:
+        serve(host=args.host, port=args.port)
+    except RuntimeError as exc:
+        die(str(exc))
+    return 0
+
+
 def cmd_mcp(args: argparse.Namespace) -> int:
     try:
         from mergeproof.mcp_server import serve
@@ -370,6 +362,11 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("agent-prompt", help="render a CLAUDE.md / AGENTS.md section from the policy")
     add_policy_arg(p)
     p.set_defaults(func=cmd_agent_prompt)
+
+    p = sub.add_parser("serve", help="run as a GitHub App: receive webhooks and gate pull requests with no workflow")
+    p.add_argument("--host", default=os.environ.get("HOST", "0.0.0.0"))
+    p.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8080")))
+    p.set_defaults(func=cmd_serve)
 
     p = sub.add_parser("mcp", help="serve the policy to coding agents over MCP (stdio)")
     add_policy_arg(p)
