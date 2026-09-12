@@ -10,6 +10,7 @@ become available to any policy.
 from pydantic import BaseModel
 from mergeproof import Check, Context, Outcome, Status
 
+
 class ImageSmokeTested(Check):
     id = "image.smoke_tested"
     description = "The image named in the evidence block was exercised against the environment."
@@ -20,8 +21,11 @@ class ImageSmokeTested(Check):
     def run(self, ctx: Context, params: Params, files: list[str]) -> Outcome:
         tag = ctx.evidence().get("image")
         if not tag or not tag.startswith(params.registry):
-            return Outcome(status=Status.FAIL, summary="no image under the expected registry",
-                           fix="Build the branch image and record its tag under `image`.")
+            return Outcome(
+                status=Status.FAIL,
+                summary="no image under the expected registry",
+                fix="Build the branch image and record its tag under `image`.",
+            )
         # query your deployment API here
         return Outcome(status=Status.PASS, summary=f"{tag} smoke-tested")
 
@@ -50,6 +54,7 @@ named groups such as `trace_id` are available.
 
 ```python
 import httpx
+
 
 class JaegerVerifier:
     def __init__(self, host: str | None = None, timeout: float = 15.0) -> None:
