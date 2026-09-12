@@ -5,6 +5,9 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Container image `ghcr.io/aryamanz29/mergeproof` with the CLI and MCP server; published on every release tag.
+
 ## [0.2.0] - 2026-09-12
 
 ### Added
