@@ -3,6 +3,22 @@ version: 1
 project: mergeproof
 
 rules:
+  - id: ci-green
+    description: Lint, the unit matrix and the integration suite pass on the head commit. The `mergeproof` status is the only required check; this rule is what makes it stand for CI as a whole.
+    require:
+      - check: ci.job_passed
+        name: lint
+        with: { name: "^lint$", regex: true }
+      - check: ci.job_passed
+        name: unit tests on every Python
+        with: { name: "^unit \\(3\\.1[123]\\)$", regex: true, min_matches: 3 }
+      - check: ci.job_passed
+        name: integration
+        with: { name: "^integration$", regex: true }
+      - check: ci.job_passed
+        name: docker image
+        with: { name: "^docker image$", regex: true }
+
   - id: source-needs-tests
     description: A change to a module ships with a change to its tests.
     when:
@@ -21,12 +37,6 @@ rules:
           ignore: ["src/mergeproof/checks/__init__.py", "src/mergeproof/checks/base.py", "src/mergeproof/checks/registry.py",
                    "src/mergeproof/verifiers/__init__.py", "src/mergeproof/verifiers/base.py", "src/mergeproof/render/__init__.py",
                    "src/mergeproof/providers/__init__.py", "src/mergeproof/report.py", "src/mergeproof/context.py"]
-      - check: ci.job_passed
-        name: unit tests green on every Python
-        with: { name: "^unit \\(3\\.1[123]\\)$", regex: true, min_matches: 3 }
-      - check: ci.job_passed
-        name: integration green
-        with: { name: "^integration$", regex: true }
 
   - id: mcp-server-has-integration-test
     description: The MCP server is only tested end to end, so a change there touches that test.
