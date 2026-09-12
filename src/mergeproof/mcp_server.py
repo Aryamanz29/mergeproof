@@ -11,7 +11,7 @@ from typing import Any
 
 from mcp.server.mcpserver import MCPServer
 
-from mergeproof import __version__, engine, evidence, policy, render
+from mergeproof import __version__, engine, evidence, policy, render, telemetry
 from mergeproof.checks.registry import load_registry
 from mergeproof.context import ContextError
 from mergeproof.providers import git
@@ -101,4 +101,5 @@ def build_server(policy_path: str = "mergeproof.yaml", root: str = ".", base: st
 
 
 def serve(policy_path: str = "mergeproof.yaml", root: str = ".", base: str = "origin/main") -> None:
+    telemetry.configure()
     build_server(policy_path, root, base).run("stdio")
