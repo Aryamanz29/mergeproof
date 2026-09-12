@@ -34,11 +34,11 @@ def test_markdown_comment_has_marker_table_and_template():
     _, _, report = make_report()
     text = render.report_markdown(report)
     assert text.startswith(render.MARKER)
-    assert "**0 of 2 requirements satisfied, 2 fail**" in text
-    assert "| ❌ | evidence.field | `needs-evidence` |" in text
-    assert "<sub>warn</sub>" in text
-    assert "### What to do" in text and "Use the staging tenant." in text
-    assert "Evaluated " in text
+    assert "`▱▱▱▱▱▱▱▱▱▱` **0 of 2** requirements satisfied · 2 fail" in text
+    assert "<details open><summary>❌ <b>needs-evidence</b> · 0 of 2 <sub>prove it</sub></summary>" in text
+    assert "| ❌ | evidence.field | " in text and "<sub>warn</sub>" in text
+    assert "**To do**" in text and "Use the staging tenant." in text
+    assert "📋 Evidence template" in text and "Evaluated " in text
     assert "```evidence\nenvironment: staging\n```" in text
     assert render.MARKER not in render.report_markdown(report, marker=False)
 
@@ -75,3 +75,16 @@ def test_agent_prompt_mirrors_the_policy():
 def test_icons_cover_every_status():
     assert set(render.markdown.ICON) == set(Status)
     assert set(render.text.TAG) == set(Status)
+
+
+def test_satisfied_rules_are_collapsed_and_empty_reports_are_one_line():
+    pol = policy.loads("rules:\n  - id: ok\n    require: [{check: pr.labels, with: {none_of: [wip]}}]\n")
+    registry = builtin_registry()
+    report = engine.evaluate(pol, make_context(files=["a.py"]), registry)
+    text = render.report_markdown(report)
+    assert "<details><summary>✅ <b>ok</b> · 1 of 1</summary>" in text
+    assert "**To do**" not in text and "`▰▰▰▰▰▰▰▰▰▰` **1 of 1**" in text
+    assert render.markdown.meter(0, 0) == "" and render.markdown.meter(1, 3) == "`▰▰▰▱▱▱▱▱▱▱`"
+    empty = engine.evaluate(pol, make_context(files=[]), registry)
+    empty.rules[0].matched = False
+    assert render.report_markdown(empty, marker=False) == "✅ **mergeproof**: no rules apply to this change · `abc1234`"

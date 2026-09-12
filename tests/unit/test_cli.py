@@ -155,7 +155,7 @@ def test_publish_calls_each_channel(tmp_path, monkeypatch, capsys):
     path.write_text(report.to_json())
     calls = []
     monkeypatch.setattr(github, "client_from_env", lambda: object())
-    monkeypatch.setattr(github, "upsert_comment", lambda *a: calls.append("comment") or "https://c/1")
+    monkeypatch.setattr(github, "upsert_comment", lambda *a, **k: calls.append("comment") or "https://c/1")
     monkeypatch.setattr(github, "set_commit_status", lambda *a: calls.append("status"))
     monkeypatch.setattr(github, "create_check_run", lambda *a: calls.append("check") or "https://k/1")
     assert run("comment", path, "--status", "--check-run") == 0
@@ -185,13 +185,15 @@ def test_check_publishes_each_requested_channel(tmp_path, monkeypatch, capsys):
     policy.write_text("rules:\n  - id: r\n    require: [{check: pr.labels, with: {none_of: [wip]}}]\n")
     calls = []
     monkeypatch.setattr(github, "client_from_env", lambda: object())
-    monkeypatch.setattr(github, "upsert_comment", lambda *a: calls.append("comment") or "https://c/1")
+    monkeypatch.setattr(
+        github, "upsert_comment", lambda *a, **k: calls.append(("comment", k["create"])) or "https://c/1"
+    )
     monkeypatch.setattr(github, "set_commit_status", lambda *a: calls.append("status"))
     monkeypatch.setattr(github, "create_check_run", lambda *a: calls.append("check") or "https://k/1")
     assert run("check", "--context", context, "-p", policy, "-q", "--status") == 0
     assert calls == ["status"]
     calls.clear()
     assert run("check", "--context", context, "-p", policy, "-q", "--comment", "--check-run") == 0
-    assert calls == ["comment", "check"]
+    assert calls == [("comment", True), "check"]
     assert run("check", "--context", context, "-p", policy, "-q") == 0
-    assert calls == ["comment", "check"]
+    assert calls == [("comment", True), "check"]

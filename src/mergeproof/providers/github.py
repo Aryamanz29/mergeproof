@@ -143,12 +143,18 @@ def fetch(client: Client, repo: str, number: int, root: str = ".") -> Context:
     )
 
 
-def upsert_comment(client: Client, repo: str, number: int, body: str, marker: str) -> str:
-    """Create or update the single comment carrying *marker*; return its URL."""
+def upsert_comment(client: Client, repo: str, number: int, body: str, marker: str, create: bool = True) -> str:
+    """Create or update the single comment carrying *marker*; return its URL.
+
+    With ``create=False`` an existing comment is updated but no new one is posted, which keeps
+    pull requests that no rule applies to free of noise.
+    """
     for comment in client.paginate(f"/repos/{repo}/issues/{number}/comments"):
         if marker in (comment.get("body") or ""):
             client.patch(f"/repos/{repo}/issues/comments/{comment['id']}", {"body": body})
             return str(comment.get("html_url", ""))
+    if not create:
+        return ""
     created = client.post(f"/repos/{repo}/issues/{number}/comments", {"body": body})
     return str(created.get("html_url", ""))
 

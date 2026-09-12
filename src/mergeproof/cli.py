@@ -173,11 +173,19 @@ def publish(report: Report, comment: bool = True, status: bool = False, check_ru
     try:
         client = github.client_from_env()
         if comment:
-            link = (
-                github.upsert_comment(client, report.repo, report.number, render.report_markdown(report), render.MARKER)
-                or link
+            url = github.upsert_comment(
+                client,
+                report.repo,
+                report.number,
+                render.report_markdown(report),
+                render.MARKER,
+                create=bool(report.matched),
             )
-            print(f"mergeproof: comment at {link}", file=sys.stderr)
+            link = url or link
+            print(
+                f"mergeproof: comment at {url}" if url else "mergeproof: no rules apply; no comment posted",
+                file=sys.stderr,
+            )
         if check_run:
             summary = render.report_markdown(report, marker=False)
             url = github.create_check_run(

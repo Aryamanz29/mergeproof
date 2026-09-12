@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from mergeproof import evidence
 from mergeproof.policy import Policy, Severity
-from mergeproof.report import Report, Status
+from mergeproof.report import UNMET, Report, RuleResult, Status
 
 MARKER = "<!-- mergeproof-report -->"
 
@@ -23,48 +23,83 @@ HEADLINE = {
 }
 
 
+def meter(done: int, total: int, width: int = 10) -> str:
+    if total == 0:
+        return ""
+    filled = round(width * done / total)
+    return "`" + "▰" * filled + "▱" * (width - filled) + "`"
+
+
+def rule_status(rule: RuleResult) -> Status:
+    statuses = [req.outcome.status for req in rule.requirements]
+    for status in (Status.ERROR, Status.FAIL, Status.PENDING, Status.WARN):
+        if status in statuses:
+            return status
+    return Status.PASS
+
+
 def report_markdown(report: Report, marker: bool = True) -> str:
-    """The sticky PR comment. Kept short: the table says what stands, the list below says what to do."""
+    """The sticky PR comment.
+
+    One headline with a progress meter, then one block per rule: rules with work left are
+    expanded and say exactly what to do; satisfied rules are collapsed to a single line.
+    """
     verdict = report.verdict
     lines: list[str] = [MARKER] if marker else []
-    title = f"## {ICON[verdict]} mergeproof: {HEADLINE.get(verdict, verdict.value)}"
-    lines += [title, "", f"**{report.headline()}**" + (f" for `{report.head_sha[:7]}`" if report.head_sha else ""), ""]
+    sha = f" · `{report.head_sha[:7]}`" if report.head_sha else ""
     if not report.matched:
-        lines.append("No rules apply to this change.")
+        lines.append(f"✅ **mergeproof**: no rules apply to this change{sha}")
         return "\n".join(lines)
 
-    lines += ["| Status | Requirement | Rule | Detail |", "|:-:|---|---|---|"]
-    for rule, req in report.requirements:
-        note = "" if req.severity == Severity.BLOCK else " <sub>warn</sub>"
-        lines.append(f"| {ICON[req.outcome.status]} | {req.label}{note} | `{rule.id}` | {req.outcome.summary} |")
-    lines.append("")
+    counts = report.counts()
+    total = len(report.requirements)
+    done = counts[Status.PASS] + counts[Status.SKIP]
+    rest = " · ".join(f"{n} {status.value}" for status, n in counts.items() if n and status in UNMET)
+    lines += [
+        f"## {ICON[verdict]} mergeproof: {HEADLINE.get(verdict, verdict.value)}",
+        "",
+        f"{meter(done, total)} **{done} of {total}** requirements satisfied" + (f" · {rest}" if rest else "") + sha,
+        "",
+    ]
 
-    unmet = report.unmet()
-    if unmet:
-        lines += ["### What to do", ""]
-        for _, req in unmet:
-            lines.append(f"{ICON[req.outcome.status]} **{req.label}**: {req.outcome.fix or req.outcome.summary}")
-            if req.outcome.status in (Status.FAIL, Status.ERROR):
-                shown = req.outcome.details[:3]
-                lines += [f"  - {d}" for d in shown]
-                if len(req.outcome.details) > 3:
-                    lines.append(f"  - and {len(req.outcome.details) - 3} more")
-            if req.instructions:
-                lines.append(f"  - {req.instructions.strip()}")
-        lines.append("")
-        template = report.evidence_template()
-        if template:
-            lines += [
-                "<details><summary>Evidence template: paste into the PR description and fill in</summary>",
-                "",
-                evidence.render(template, report.evidence_block),
-                "",
-                "</details>",
-                "",
-            ]
+    for rule in report.matched:
+        status = rule_status(rule)
+        satisfied = sum(1 for r in rule.requirements if r.outcome.status in (Status.PASS, Status.SKIP))
+        open_attr = " open" if status in UNMET else ""
+        title = f"{ICON[status]} <b>{rule.id}</b> · {satisfied} of {len(rule.requirements)}"
+        if rule.description:
+            title += f" <sub>{rule.description}</sub>"
+        lines += [f"<details{open_attr}><summary>{title}</summary>", ""]
+        lines += ["| | Requirement | Now |", "|:-:|---|---|"]
+        for req in rule.requirements:
+            note = "" if req.severity == Severity.BLOCK else " <sub>warn</sub>"
+            lines.append(f"| {ICON[req.outcome.status]} | {req.label}{note} | {req.outcome.summary} |")
+        todo = [req for req in rule.requirements if req.outcome.status in UNMET]
+        if todo:
+            lines += ["", "**To do**", ""]
+            for req in todo:
+                lines.append(f"- {ICON[req.outcome.status]} **{req.label}**: {req.outcome.fix or req.outcome.summary}")
+                if req.outcome.status in (Status.FAIL, Status.ERROR):
+                    lines += [f"  - {d}" for d in req.outcome.details[:3]]
+                    if len(req.outcome.details) > 3:
+                        lines.append(f"  - and {len(req.outcome.details) - 3} more")
+                if req.instructions:
+                    lines.append(f"  - {req.instructions.strip()}")
+        lines += ["", "</details>", ""]
+
+    template = report.evidence_template()
+    if template:
+        lines += [
+            "<details><summary>📋 Evidence template · paste into the PR description and fill in</summary>",
+            "",
+            evidence.render(template, report.evidence_block),
+            "",
+            "</details>",
+            "",
+        ]
     lines.append(
-        f"<sub>Evaluated {report.evaluated_at}. Re-evaluated on push, label, comment and CI completion when the "
-        f"workflow subscribes to those events. `mergeproof explain` shows the same requirements locally.</sub>"
+        f"<sub>Evaluated {report.evaluated_at} · updates on push, label, comment and CI completion · "
+        f"`mergeproof explain` shows this locally</sub>"
     )
     return "\n".join(lines)
 
