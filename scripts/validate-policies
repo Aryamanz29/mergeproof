@@ -1,0 +1,10 @@
+#!/bin/sh
+# Validate every policy file passed on the command line. Used by pre-commit.
+set -eu
+status=0
+for policy in "$@"; do
+    if ! uv run --quiet mergeproof validate --policy "$policy"; then
+        status=1
+    fi
+done
+exit $status

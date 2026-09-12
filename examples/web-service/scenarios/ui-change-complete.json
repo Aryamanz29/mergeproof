@@ -1,0 +1,30 @@
+{
+  "expected": "pass",
+  "context": {
+    "source": "github",
+    "online": true,
+    "repo": "example/web",
+    "number": 11,
+    "title": "feat: new checkout button",
+    "author": "dev",
+    "labels": [],
+    "base_ref": "main",
+    "head_sha": "5555555aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "base_sha": "0000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "body": "## Summary\nBigger button.\n\n```evidence\npreview: https://pr-11.preview.example.com\nscreenshots:\n  - what: checkout page\n    before: https://shots.example.com/pr11-before.png\n    after: https://shots.example.com/pr11-after.png\n```\n",
+    "files": [
+      {
+        "path": "web/src/checkout/Button.tsx",
+        "status": "added"
+      }
+    ],
+    "comments": [],
+    "check_runs": [
+      {
+        "name": "e2e (chromium)",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ]
+  }
+}

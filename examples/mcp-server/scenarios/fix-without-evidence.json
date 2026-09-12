@@ -1,0 +1,49 @@
+{
+  "expected": "fail",
+  "context": {
+    "source": "github",
+    "online": true,
+    "repo": "example/mcp-server",
+    "number": 77,
+    "title": "fix(search): empty query no longer raises",
+    "author": "dev",
+    "labels": [],
+    "base_ref": "main",
+    "head_sha": "4444444aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "base_sha": "0000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "body": "Fixes the crash.",
+    "files": [
+      {
+        "path": "server/tools/search.py",
+        "status": "modified"
+      },
+      {
+        "path": "tests/unit/tools/test_search.py",
+        "status": "modified"
+      },
+      {
+        "path": "tests/integration/test_search.py",
+        "status": "modified"
+      }
+    ],
+    "check_runs": [
+      {
+        "name": "unit (3.12)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "integration \u00b7 search",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "comments": [
+      {
+        "author": "github-actions[bot]",
+        "created_at": "2026-09-10T10:00:00Z",
+        "body": "```verdict\ncheck: mcp-review\nverdict: pass\nhead: 4444444\nconfidence: 0.85\nsummary: input validation added, error path tested\n```"
+      }
+    ]
+  }
+}

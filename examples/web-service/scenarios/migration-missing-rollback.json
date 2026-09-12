@@ -1,0 +1,28 @@
+{
+  "expected": "fail",
+  "context": {
+    "source": "github",
+    "online": true,
+    "repo": "example/web",
+    "number": 10,
+    "title": "feat: add invoices table",
+    "author": "dev",
+    "labels": [],
+    "base_ref": "main",
+    "head_sha": "5555555aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "base_sha": "0000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "body": "## Summary\nAdds invoices.\n",
+    "files": [
+      {
+        "path": "db/migrations/0042_invoices.up.sql",
+        "status": "added"
+      },
+      {
+        "path": "api/invoices.py",
+        "status": "added"
+      }
+    ],
+    "comments": [],
+    "check_runs": []
+  }
+}

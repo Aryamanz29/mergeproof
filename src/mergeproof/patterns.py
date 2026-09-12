@@ -1,4 +1,9 @@
-"""Glob matching with `**`, `*`, `?` and named `{capture}` segments."""
+"""Path globs with ``**``, ``*``, ``?`` and named ``{capture}`` segments.
+
+``src/{pkg}/{name}.py`` matched against ``src/api/users.py`` yields
+``pkg=api`` and ``name=users``; :func:`expand` substitutes those into a
+second glob such as ``tests/{pkg}/test_{name}*.py``.
+"""
 
 from __future__ import annotations
 
@@ -6,60 +11,57 @@ import re
 from functools import lru_cache
 
 
-@lru_cache(maxsize=1024)
-def glob_to_regex(pattern: str) -> re.Pattern[str]:
-    out: list[str] = []
+@lru_cache(maxsize=4096)
+def compile_glob(pattern: str) -> re.Pattern[str]:
+    parts: list[str] = []
     i = 0
-    n = len(pattern)
-    while i < n:
-        c = pattern[i]
+    while i < len(pattern):
+        ch = pattern[i]
         if pattern.startswith("**/", i):
-            out.append("(?:.*/)?")
+            parts.append("(?:.*/)?")
             i += 3
         elif pattern.startswith("**", i):
-            out.append(".*")
+            parts.append(".*")
             i += 2
-        elif c == "*":
-            out.append("[^/]*")
+        elif ch == "*":
+            parts.append("[^/]*")
             i += 1
-        elif c == "?":
-            out.append("[^/]")
+        elif ch == "?":
+            parts.append("[^/]")
             i += 1
-        elif c == "{":
-            j = pattern.find("}", i)
-            if j == -1:
-                raise ValueError(f"unclosed '{{' in pattern {pattern!r}")
-            name = pattern[i + 1 : j]
+        elif ch == "{":
+            end = pattern.find("}", i)
+            if end < 0:
+                raise ValueError(f"unclosed '{{' in {pattern!r}")
+            name = pattern[i + 1 : end]
             if not name.isidentifier():
-                raise ValueError(f"bad capture name {name!r} in pattern {pattern!r}")
-            out.append(f"(?P<{name}>[^/]+)")
-            i = j + 1
+                raise ValueError(f"bad capture name {name!r} in {pattern!r}")
+            parts.append(f"(?P<{name}>[^/]+)")
+            i = end + 1
         else:
-            out.append(re.escape(c))
+            parts.append(re.escape(ch))
             i += 1
-    return re.compile("^" + "".join(out) + "$")
+    return re.compile("^" + "".join(parts) + "$")
 
 
 def match(pattern: str, path: str) -> re.Match[str] | None:
-    return glob_to_regex(pattern).match(path)
+    return compile_glob(pattern).match(path)
 
 
-def any_match(patterns: list[str], path: str) -> bool:
+def matches_any(patterns: list[str], path: str) -> bool:
     return any(match(p, path) for p in patterns)
 
 
-def expand(template: str, groups: dict[str, str]) -> str:
-    """Substitute `{name}` captures into a glob template."""
-
-    def sub(m: re.Match[str]) -> str:
+def expand(template: str, captures: dict[str, str]) -> str:
+    def replace(m: re.Match[str]) -> str:
         key = m.group(1)
-        if key not in groups:
-            raise KeyError(f"template {template!r} references unknown capture {key!r}")
-        return groups[key]
+        if key not in captures:
+            raise KeyError(f"{template!r} uses {{{key}}} which the source glob did not capture")
+        return captures[key]
 
-    return re.sub(r"\{(\w+)\}", sub, template)
+    return re.sub(r"\{(\w+)\}", replace, template)
 
 
-def filter_paths(paths: list[str], include: list[str], exclude: list[str] | None = None) -> list[str]:
-    exclude = exclude or []
-    return [p for p in paths if any_match(include, p) and not any_match(exclude, p)]
+def select(paths: list[str], include: list[str], exclude: list[str] | None = None) -> list[str]:
+    excluded = exclude or []
+    return [p for p in paths if matches_any(include, p) and not matches_any(excluded, p)]

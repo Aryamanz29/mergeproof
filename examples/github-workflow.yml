@@ -1,14 +1,16 @@
-# .github/workflows/mergeproof.yml in the gated repo
-name: Evidence gate
+# Copy to .github/workflows/mergeproof.yml. Re-runs whenever anything the gate reads can change:
+# the diff, the description, labels, CI results, and comments (where /verified and verdicts land).
+name: mergeproof
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited, labeled, unlabeled]
   issue_comment:
-    types: [created, edited]        # re-run when a reviewer posts /verified
+    types: [created, edited]
   check_suite:
-    types: [completed]              # re-run when the CI jobs finish
+    types: [completed]
+
 jobs:
-  mergeproof:
+  gate:
     if: github.event_name != 'issue_comment' || github.event.issue.pull_request
     runs-on: ubuntu-latest
     permissions:
@@ -17,11 +19,11 @@ jobs:
       checks: read
     steps:
       - uses: actions/checkout@v4
-      - uses: Aryamanz29/mergeproof@v0.1.0
+        with:
+          ref: ${{ github.event.repository.default_branch }}   # read the policy from the base branch
+      - uses: Aryamanz29/mergeproof@v0.2.0
         with:
           policy: mergeproof.yaml
+          pending-ok: "false"
         env:
-          # only needed when a rule sets `verify: true`
-          BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
-          # issue_comment / check_suite events don't carry the PR number
           MERGEPROOF_PR_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}

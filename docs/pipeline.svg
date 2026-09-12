@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="200" viewBox="0 0 900 200" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#6b7280"/>
+    </marker>
+  </defs>
+  <rect width="900" height="200" fill="#ffffff"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+    <rect x="20" y="60" width="180" height="60" rx="8" fill="#f3f0ff" stroke="#7c3aed" stroke-width="1.5"/>
+    <text x="110" y="85" text-anchor="middle" font-weight="600" fill="#4c1d95">mergeproof context</text>
+    <text x="110" y="105" text-anchor="middle" fill="#6b7280" font-size="12">git or GitHub API</text>
+
+    <rect x="250" y="60" width="180" height="60" rx="8" fill="#f3f0ff" stroke="#7c3aed" stroke-width="1.5"/>
+    <text x="340" y="85" text-anchor="middle" font-weight="600" fill="#4c1d95">mergeproof check</text>
+    <text x="340" y="105" text-anchor="middle" fill="#6b7280" font-size="12">policy × context</text>
+
+    <rect x="480" y="60" width="180" height="60" rx="8" fill="#f3f0ff" stroke="#7c3aed" stroke-width="1.5"/>
+    <text x="570" y="85" text-anchor="middle" font-weight="600" fill="#4c1d95">mergeproof report</text>
+    <text x="570" y="105" text-anchor="middle" fill="#6b7280" font-size="12">text · md · json</text>
+
+    <rect x="710" y="60" width="170" height="60" rx="8" fill="#f3f0ff" stroke="#7c3aed" stroke-width="1.5"/>
+    <text x="795" y="85" text-anchor="middle" font-weight="600" fill="#4c1d95">mergeproof comment</text>
+    <text x="795" y="105" text-anchor="middle" fill="#6b7280" font-size="12">sticky PR comment</text>
+  </g>
+  <line x1="200" y1="90" x2="248" y2="90" stroke="#6b7280" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="430" y1="90" x2="478" y2="90" stroke="#6b7280" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="660" y1="90" x2="708" y2="90" stroke="#6b7280" stroke-width="2" marker-end="url(#a)"/>
+  <text x="224" y="80" text-anchor="middle" fill="#6b7280" font-size="11">JSON</text>
+  <text x="454" y="80" text-anchor="middle" fill="#6b7280" font-size="11">JSON</text>
+  <text x="684" y="80" text-anchor="middle" fill="#6b7280" font-size="11">JSON</text>
+  <text x="450" y="160" text-anchor="middle" fill="#374151">Every stage reads stdin and writes stdout. Exit codes: 0 pass · 1 fail · 2 pending · 3 usage error.</text>
+</svg>

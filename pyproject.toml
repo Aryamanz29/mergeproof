@@ -1,46 +1,67 @@
 [project]
 name = "mergeproof"
-version = "0.1.0"
-description = "Evidence gates for pull requests: declare what a change must prove, enforce it in CI, and hand agents the same rules."
+version = "0.2.0"
+description = "Evidence gates for pull requests: declare what a change must prove, enforce it in CI, explain it to agents."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Aryaman Bhushan" }]
-keywords = ["github-actions", "ci", "guardrails", "evidence", "agentic", "pull-request"]
+keywords = ["github-actions", "ci", "pull-request", "evidence", "guardrails", "agents", "mcp"]
 classifiers = [
   "Development Status :: 3 - Alpha",
+  "Environment :: Console",
   "Intended Audience :: Developers",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Topic :: Software Development :: Quality Assurance",
+  "Topic :: Software Development :: Version Control :: Git",
 ]
 dependencies = [
+  "httpx>=0.27,<1",
   "pydantic>=2.6,<3",
   "pyyaml>=6.0",
-  "httpx>=0.27",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6", "respx>=0.21"]
+mcp = ["mcp>=2.1.1,<3"]
+
+[dependency-groups]
+dev = [
+  "mypy>=1.11",
+  "pre-commit>=3.8",
+  "pytest>=8",
+  "pytest-cov>=5",
+  "respx>=0.21",
+  "ruff>=0.6",
+  "types-PyYAML",
+]
+
+[project.urls]
+Homepage = "https://github.com/Aryamanz29/mergeproof"
+Issues = "https://github.com/Aryamanz29/mergeproof/issues"
+Changelog = "https://github.com/Aryamanz29/mergeproof/blob/main/CHANGELOG.md"
 
 [project.scripts]
 mergeproof = "mergeproof.cli:main"
 
-# Third-party packages register extra checks here:
-# [project.entry-points."mergeproof.checks"]
-# my_check = "my_pkg.checks:MyCheck"
+# Built-in checks are registered like any plugin would be.
 [project.entry-points."mergeproof.checks"]
 "tests.changed" = "mergeproof.checks.tests_changed:TestsChanged"
+"files.changed" = "mergeproof.checks.files:FilesChanged"
 "evidence.field" = "mergeproof.checks.evidence_field:EvidenceField"
-"evidence.traces" = "mergeproof.checks.traces:EvidenceTraces"
+"evidence.links" = "mergeproof.checks.evidence_links:EvidenceLinks"
 "ci.job_passed" = "mergeproof.checks.ci_job:CiJobPassed"
 "review.human_verified" = "mergeproof.checks.human_verified:HumanVerified"
+"agent.verdict" = "mergeproof.checks.agent_verdict:AgentVerdict"
 "pr.labels" = "mergeproof.checks.labels:Labels"
 "pr.body" = "mergeproof.checks.body:Body"
 "shell" = "mergeproof.checks.shell:Shell"
-"agent.verdict" = "mergeproof.checks.agent_verdict:AgentVerdict"
+
+[project.entry-points."mergeproof.verifiers"]
+http = "mergeproof.verifiers.http:HttpVerifier"
 
 [build-system]
 requires = ["hatchling>=1.25"]
@@ -49,13 +70,34 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/mergeproof"]
 
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "examples", "docs", "README.md", "CHANGELOG.md", "LICENSE", "action.yml"]
+
+[tool.uv]
+# Release-age cooldown: never resolve a version published in the last week.
+exclude-newer = "2026-09-05T00:00:00Z"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
+addopts = "-q --strict-markers"
+markers = ["integration: exercises the installed CLI, examples and MCP server end to end"]
+
+[tool.coverage.run]
+source = ["mergeproof"]
+omit = ["src/mergeproof/mcp_server.py"]
 
 [tool.ruff]
 line-length = 120
 target-version = "py311"
+src = ["src", "tests"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B"]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["RUF012"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src/mergeproof"]
+ignore_missing_imports = true
+warn_unused_ignores = false

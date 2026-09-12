@@ -1,76 +1,67 @@
-# Example evidence policy for an MCP server repo (tools/ + unit/integration tests + Braintrust traces).
+# An MCP server whose tools are called by LLM agents. Behaviour changes are easy to claim
+# and hard to see, so a fix has to show itself on a live deployment: a trace of the broken
+# call, a trace of the fixed call, and a human who opened both.
 #
-# Encodes the workflow that is today a comment pasted on every PR:
-#   1. bug fixes / features on tools ship with unit + integration tests
-#   2. a temporary image is built and exercised on the internal eval tenant
-#   3. before/after Braintrust traces are linked in the PR
-#   4. a human opens the traces and confirms the fix does what it claims
-#
-# Contributors and agents run `mergeproof explain` locally; CI runs `mergeproof check --github --comment`.
+# Traces live in Langfuse (open source, self-hosted). Links are verified by the
+# mergeproof-langfuse plugin; drop the `verify:` line to accept well-formed links only.
 version: 1
-project: mcp-server
-evidence_block: evidence
+project: example-mcp-server
 
 rules:
   - id: tool-change-needs-unit-tests
     description: Every changed tool module ships with changed unit tests for that module.
     when:
-      paths: ["modelcontextprotocol/tools/**/*.py", "modelcontextprotocol/middleware/**/*.py"]
-      exclude_paths: ["**/__init__.py", "modelcontextprotocol/tools/models.py"]
+      paths: ["server/tools/**/*.py"]
+      exclude_paths: ["server/tools/__init__.py", "server/tools/models.py"]
     require:
       - check: tests.changed
-        name: unit tests for touched modules
+        name: unit tests for touched tools
         with:
           map:
-            "modelcontextprotocol/tools/{name}.py": "modelcontextprotocol/tests/unit/**/test_{name}*.py"
-            "modelcontextprotocol/middleware/{name}.py": "modelcontextprotocol/tests/unit/**/test_{name}*.py"
-          ignore: ["modelcontextprotocol/tools/mcp_tools.py"]   # registry file; covered by integration
-        instructions: Add a regression test that fails before the fix and passes after it.
+            "server/tools/{name}.py": "tests/unit/**/test_{name}*.py"
+        instructions: A regression test that fails before the fix and passes after it.
       - check: ci.job_passed
         name: unit tests green
-        with: { name: "🧪 Unit Tests", regex: true }
-      - check: ci.job_passed
-        name: coverage gate
-        with: { name: "📈 Coverage Gate" , regex: true }
+        with: { name: "^unit", regex: true }
 
   - id: tool-change-needs-integration-tests
-    description: Tool behaviour changes are covered by the integration suite that runs against the eval tenant.
+    description: Tool behaviour is covered by the integration suite that talks to a real deployment.
     when:
-      paths: ["modelcontextprotocol/tools/**/*.py"]
-      exclude_paths: ["**/__init__.py", "modelcontextprotocol/tools/models.py"]
+      paths: ["server/tools/**/*.py"]
+      exclude_paths: ["server/tools/__init__.py", "server/tools/models.py"]
     require:
       - check: tests.changed
         name: integration tests touched
-        severity: warn        # promote to block once every tool has an integration module
-        with:
-          any_of: ["modelcontextprotocol/tests/integration/**/*.py"]
+        severity: warn
+        with: { any_of: ["tests/integration/**/*.py"] }
       - check: ci.job_passed
         name: integration tests green
-        with: { name: "🧪 Integration Tests", regex: true }
+        with: { name: "^integration", regex: true }
 
-  - id: bugfix-live-evidence
-    description: Fixes and features prove the behaviour change on the internal eval tenant with before/after traces.
+  - id: fix-needs-live-evidence
+    description: Fixes and features prove the behaviour change on the staging deployment with before/after traces.
     when:
-      paths: ["modelcontextprotocol/**/*.py"]
-      exclude_paths: ["modelcontextprotocol/tests/**", "modelcontextprotocol/scripts/**"]
+      paths: ["server/**/*.py"]
+      exclude_paths: ["tests/**"]
       title: "^(fix|feat)(\\(|:|!)"
     instructions: >
-      Build a temporary image from the branch, deploy it against the internal eval tenant,
-      reproduce the issue and capture the trace (before), then repeat the exact call on the
-      patched image and capture the trace (after). Link both in the evidence block.
+      Deploy the branch image to staging, reproduce the problem and keep the trace link, then
+      repeat the same call against the fixed image and keep that link too.
     require:
       - check: evidence.field
-        name: tested on eval tenant
-        with: { key: tenant, equals: staging }
+        name: tested on staging
+        with: { key: environment, equals: staging }
       - check: evidence.field
-        name: temporary image tag
+        name: image under test
         with: { key: image, matches: "^[\\w.\\-/]+:[\\w.\\-]+$", example: "<registry>/mcp-server:pr-<n>-<sha7>" }
-      - check: evidence.traces
-        name: before/after Braintrust traces
+      - check: evidence.links
+        name: before/after traces
         with:
-          project: mcp-internal
+          key: traces
           min_pairs: 1
-          verify: true          # needs BRAINTRUST_API_KEY in CI; set verify: false to only validate links
+          pattern: "^(?P<host>https?://[^/]+)/project/(?P<project>[^/]+)/traces/(?P<trace_id>[\\w-]+)"
+          verify: langfuse
+          example: "https://langfuse.example.com/project/<project-id>/traces/<trace-id>"
       - check: review.human_verified
         name: reviewer opened the traces
         with: { phrase: "/verified", bind_to_head: true }
@@ -78,24 +69,11 @@ rules:
           Reviewer: open both traces, confirm the after-trace shows the intended behaviour, then
           comment `/verified <7-char head sha>`. A new push invalidates the verification.
 
-  - id: agent-review
-    description: The review agent (non-deterministic) has passed; its labels are the verdict.
+  - id: automated-review
+    description: The repository's review agent has looked at the change and had nothing blocking to say.
     when:
-      paths: ["modelcontextprotocol/**", "oauth_proxy/**"]
+      paths: ["server/**"]
     require:
-      - check: pr.labels
-        name: review-agent review passed
-        with: { any_of: ["reviewed"], none_of: ["review-failed"] }
-      # When the agent is taught to post a head-bound ```verdict block instead of labels:
-      # - check: agent.verdict
-      #   with: { name: mcp-review, authors: ["github-actions[bot]"], min_confidence: 0.8 }
-
-  - id: security-sensitive-paths
-    description: Auth, middleware and CI changes need an explicit security acknowledgement.
-    severity: block
-    when:
-      paths: ["modelcontextprotocol/server.py", "modelcontextprotocol/middleware/**", "oauth_proxy/**", ".github/workflows/**"]
-    require:
-      - check: pr.labels
-        with: { any_of: ["security-reviewed"] }
-        instructions: "Ping #security; a reviewer adds the `security-reviewed` label."
+      - check: agent.verdict
+        name: review agent verdict
+        with: { name: mcp-review, authors: ["github-actions[bot]"], min_confidence: 0.7 }
