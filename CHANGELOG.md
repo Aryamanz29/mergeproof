@@ -5,6 +5,9 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- `mergeproof checks` marks checks that only produce results in GitHub mode.
+
 ## [0.2.0] - 2026-09-12
 
 ### Added

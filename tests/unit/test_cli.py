@@ -96,7 +96,8 @@ def test_explain_template_and_helpers(repo, capsys, tmp_path):
     assert "Evidence requirements" in capsys.readouterr().out
     assert run("checks") == 0
     listing = capsys.readouterr().out
-    assert "review.human_verified" in listing and "PydanticUndefined" not in listing
+    assert "review.human_verified  (GitHub mode only)" in listing
+    assert "tests.changed\n" in listing and "PydanticUndefined" not in listing
 
 
 def test_usage_errors_exit_3(repo, capsys, tmp_path, tmp_path_factory):
