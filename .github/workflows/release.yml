@@ -27,7 +27,7 @@ jobs:
           version="${GITHUB_REF_NAME#v}"
           awk -v v="$version" '/^## \[/{p = index($0, "[" v "]") > 0; next} p' CHANGELOG.md > notes.md
           test -s notes.md || echo "See CHANGELOG.md." > notes.md
-      - name: Move the floating major tag so `uses: Aryamanz29/mergeproof@v0` follows this release
+      - name: "Move the floating major tag so uses: Aryamanz29/mergeproof@v0 follows this release"
         run: |
           major="v${GITHUB_REF_NAME#v}"; major="${major%%.*}"
           git config user.name "github-actions[bot]"
