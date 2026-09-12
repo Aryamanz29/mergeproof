@@ -29,6 +29,18 @@ pip install mergeproof            # or: uv tool install mergeproof
 pip install 'mergeproof[mcp]'     # adds the MCP server for coding agents
 ```
 
+Or run it without installing anything. `uvx` fetches the package into a cache on first use;
+the container image on GHCR bundles Python, git and the `mcp` and `otel` extras:
+
+```sh
+uvx --from 'mergeproof[mcp]' mergeproof explain
+docker run --rm -v "$PWD":/repo ghcr.io/aryamanz29/mergeproof check --local
+docker run -i --rm -v "$PWD":/repo ghcr.io/aryamanz29/mergeproof mcp     # MCP over stdio, -i is required
+```
+
+The image expects the repository mounted at `/repo`. For an MCP client, the same command goes in
+the settings file: `"command": "docker", "args": ["run", "-i", "--rm", "-v", "/path/to/repo:/repo", "ghcr.io/aryamanz29/mergeproof", "mcp"]`.
+
 ## Five-minute tour
 
 ```sh

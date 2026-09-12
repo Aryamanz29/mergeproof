@@ -59,6 +59,24 @@ jobs:
         env:
           PYTHONPATH: ""
 
+  docker:
+    name: docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: mergeproof:ci
+      - name: Smoke test the image as a user would run it
+        run: |
+          docker run --rm mergeproof:ci --version
+          docker run --rm -v "$PWD":/repo mergeproof:ci validate
+          docker run --rm -v "$PWD":/repo mergeproof:ci check --local --base HEAD~1 || test $? -le 2
+          printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"smoke","version":"0"}}}\n' \
+            | docker run -i --rm -v "$PWD":/repo mergeproof:ci mcp | grep -q '"serverInfo"'
+
   gate:
     name: mergeproof (this repo's own policy)
     if: github.event_name == 'pull_request'
