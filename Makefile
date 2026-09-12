@@ -5,7 +5,7 @@ help:            ## show this help
 
 setup:           ## create the virtualenv, install everything, install git hooks
 	uv sync --group dev
-	uv pip install -e examples/plugins/mergeproof-langfuse
+	uv pip install -e examples/plugins/mergeproof-langfuse -e examples/plugins/mergeproof-braintrust
 	uv run pre-commit install --install-hooks
 
 lint:            ## ruff + format check
@@ -23,7 +23,7 @@ test:            ## unit tests with coverage
 	uv run pytest tests/unit --cov --cov-report=term-missing
 
 integration:     ## drive the installed CLI, examples and plugin
-	uv run pytest tests/integration examples/plugins/mergeproof-langfuse/tests -m "integration or not integration"
+	uv run pytest tests/integration examples/plugins/*/tests -m "integration or not integration"
 
 check:           ## run this repository's own gate against the working tree
 	uv run mergeproof check --local

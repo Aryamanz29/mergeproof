@@ -1,0 +1,24 @@
+[project]
+name = "mergeproof-braintrust"
+version = "0.1.0"
+description = "mergeproof plugin: verify before/after trace links against Braintrust."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = ["mergeproof>=0.3", "httpx>=0.27,<1"]
+
+[project.entry-points."mergeproof.verifiers"]
+braintrust = "mergeproof_braintrust:BraintrustVerifier"
+
+[project.entry-points."mergeproof.checks"]
+"braintrust.traces" = "mergeproof_braintrust:BraintrustTraces"
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mergeproof_braintrust"]
+
+[tool.uv.sources]
+mergeproof = { path = "../../..", editable = true }
