@@ -70,6 +70,8 @@ class Report(BaseModel):
     repo: str | None = None
     number: int | None = None
     head_sha: str | None = None
+    base_ref: str | None = None
+    policy_path: str = "mergeproof.yaml"
     evaluated_at: str = Field(default_factory=lambda: datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC"))
     rules: list[RuleResult] = Field(default_factory=list)
 

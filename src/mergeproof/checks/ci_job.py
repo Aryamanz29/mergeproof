@@ -11,7 +11,7 @@ import re
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from mergeproof.checks.base import Check, fail, ok, pending
+from mergeproof.checks.base import Check, fail, ok, pending, plural
 from mergeproof.context import CheckRun, Context
 from mergeproof.report import Outcome
 
@@ -48,22 +48,26 @@ class CiJobPassed(Check):
             runs = [r for r in ctx.check_runs if r.name == params.name]
         runs = newest_per_name(runs)
         if not runs:
-            message = f"no check run named `{params.name}` on {ctx.head_short or 'the head commit'}"
+            message = (
+                f"no check run matching `{params.name}` yet"
+                if params.regex
+                else f"no check run named `{params.name}` yet"
+            )
             return fail(message) if params.missing == "fail" else pending(message)
         failed = [r for r in runs if r.status == "completed" and r.conclusion not in ("success", "skipped", "neutral")]
         running = [r for r in runs if r.status != "completed"]
         succeeded = [r for r in runs if r.status == "completed" and r.conclusion == "success"]
         if failed:
             return fail(
-                f"{len(failed)} run(s) failed",
+                f"{plural(len(failed), 'run')} failed",
                 details=[f"{r.name}: {r.conclusion}" + (f" {r.url}" if r.url else "") for r in failed],
                 fix="Make the job green; the gate re-evaluates on the next run.",
             )
         if running:
-            return pending(f"{len(running)} run(s) still in progress", details=[r.name for r in running])
+            return pending(f"{plural(len(running), 'run')} still in progress", details=[r.name for r in running])
         if len(succeeded) < params.min_matches:
-            return fail(f"{len(succeeded)} successful run(s), need {params.min_matches}")
-        return ok(f"{len(succeeded)} run(s) succeeded", details=[r.name for r in succeeded][:10])
+            return fail(f"{plural(len(succeeded), 'successful run')}, need {params.min_matches}")
+        return ok(f"{plural(len(succeeded), 'run')} succeeded", details=[r.name for r in succeeded][:10])
 
     def explain(self, params: Params) -> str:
         how = "matching" if params.regex else "named"

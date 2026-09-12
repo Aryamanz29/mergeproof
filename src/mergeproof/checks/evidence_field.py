@@ -32,7 +32,7 @@ class EvidenceField(Check):
         if ev.errors:
             return fail("evidence block could not be parsed", details=ev.errors, fix=self.fix(params))
         if not ev.has(params.key):
-            why = f"no ```{params.block} block in the PR description" if not ev.found else f"`{params.key}` is missing"
+            why = f"no `{params.block}` block in the PR description" if not ev.found else f"`{params.key}` is missing"
             return fail(why, fix=self.fix(params))
         value = ev.get(params.key)
         if params.equals is not None and value != params.equals:
@@ -47,7 +47,7 @@ class EvidenceField(Check):
         return ok(f"`{params.key}` = {shown}")
 
     def fix(self, params: Params) -> str:
-        return f"Add `{params.key}` to the ```{params.block} block in the PR description. {self.explain(params)}"
+        return f"Add `{params.key}` to the `{params.block}` block in the PR description. {self.explain(params)}"
 
     def explain(self, params: Params) -> str:
         wants = [f"`{params.key}` present"]

@@ -63,3 +63,9 @@ def skip(summary: str, **kw: Any) -> Outcome:
 
 def error(summary: str, **kw: Any) -> Outcome:
     return Outcome(status=Status.ERROR, summary=summary, **kw)
+
+
+def plural(count: int, noun: str, plural_form: str | None = None) -> str:
+    """``plural(1, "run")`` is ``"1 run"``; ``plural(3, "run")`` is ``"3 runs"``."""
+    word = noun if count == 1 else (plural_form or noun + "s")
+    return f"{count} {word}"

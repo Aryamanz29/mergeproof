@@ -12,7 +12,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from mergeproof.checks.base import Check, error, fail, ok
+from mergeproof.checks.base import Check, error, fail, ok, plural
 from mergeproof.context import Context
 from mergeproof.report import Outcome
 from mergeproof.verifiers import UnknownVerifier, Verifier, load_verifier
@@ -72,9 +72,9 @@ class EvidenceLinks(Check):
             if "after" in pair and ("before" in pair or not params.require_before):
                 pairs.append(pair)
         if problems:
-            return fail(f"{len(problems)} problem(s) in `{params.key}`", details=problems, fix=self.fix(params))
+            return fail(f"{plural(len(problems), 'problem')} in `{params.key}`", details=problems, fix=self.fix(params))
         if len(pairs) < params.min_pairs:
-            return fail(f"{len(pairs)} valid pair(s), need {params.min_pairs}", fix=self.fix(params))
+            return fail(f"{plural(len(pairs), 'valid pair')}, need {params.min_pairs}", fix=self.fix(params))
 
         if params.verify:
             unresolved = self.verify_pairs(pairs, regex, params)
@@ -82,8 +82,8 @@ class EvidenceLinks(Check):
                 return error(f"verifier {params.verify!r} is not available or failed")
             if unresolved:
                 return fail("link(s) could not be verified", details=unresolved, fix=self.fix(params))
-            return ok(f"{len(pairs)} before/after pair(s), all verified", data={"pairs": pairs})
-        return ok(f"{len(pairs)} before/after pair(s)", data={"pairs": pairs})
+            return ok(f"{plural(len(pairs), 'before/after pair')}, all verified", data={"pairs": pairs})
+        return ok(plural(len(pairs), "before/after pair"), data={"pairs": pairs})
 
     def verify_pairs(self, pairs: list[dict[str, str]], regex: re.Pattern[str], params: Params) -> list[str] | None:
         """Return the links that did not resolve, or None when the verifier itself is unusable."""

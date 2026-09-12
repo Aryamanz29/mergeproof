@@ -144,6 +144,8 @@ def test_upsert_comment_updates_existing_marker_or_creates():
     )
     assert github.upsert_comment(github.Client("tok"), "o/r", 8, "new", "<!-- m -->") == "https://c/9"
     assert post.called
+    assert github.upsert_comment(github.Client("tok"), "o/r", 8, "new", "<!-- m -->", create=False) == ""
+    assert post.call_count == 1
 
 
 def test_locate_pr_from_event_and_env(tmp_path, monkeypatch):
