@@ -38,6 +38,9 @@ def test_from_git_sees_committed_renamed_and_untracked(repo):
     assert by_path["src/a.py"].status == "modified"
     assert by_path["new.txt"].status == "renamed" and by_path["new.txt"].previous_path == "old.txt"
     assert by_path["untracked.py"].status == "added"
+    assert (
+        ctx.tree is not None and {"src/a.py", "new.txt", "untracked.py"} <= set(ctx.tree) and "old.txt" not in ctx.tree
+    )
     assert ctx.title == "fix: bump" and ctx.author == "Tester" and ctx.base_ref == "main"
     assert ctx.source == "local" and not ctx.online and len(ctx.head_sha) == 40
 
@@ -92,6 +95,19 @@ def test_fetch_builds_a_full_context():
         )
     )
     respx.get(f"{api}/repos/o/r/pulls/7/comments").mock(return_value=httpx.Response(200, json=[]))
+    respx.get(f"{api}/repos/o/r/git/trees/{'a' * 40}").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "truncated": False,
+                "tree": [
+                    {"path": "src/a.py", "type": "blob"},
+                    {"path": "src", "type": "tree"},
+                    {"path": "tests/test_a.py", "type": "blob"},
+                ],
+            },
+        )
+    )
     respx.get(f"{api}/repos/o/r/commits/{'a' * 40}/check-runs").mock(
         return_value=httpx.Response(
             200,
@@ -112,6 +128,7 @@ def test_fetch_builds_a_full_context():
     assert ctx.labels == ["bug"] and ctx.head_short == "aaaaaaa"
     assert [c.kind for c in ctx.comments] == ["comment", "review"]
     assert ctx.check_runs[0].conclusion == "success" and ctx.check_runs[0].started_at == "2026-01-01T00:00:00Z"
+    assert ctx.tree == ["src/a.py", "tests/test_a.py"]
     assert ctx.evidence().get("environment") == "staging"
     assert Context.from_json(ctx.to_json()) == ctx
 

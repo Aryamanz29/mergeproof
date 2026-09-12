@@ -114,6 +114,12 @@ def fetch(client: Client, repo: str, number: int, root: str = ".") -> Context:
         for c in client.paginate(f"/repos/{repo}/pulls/{number}/comments")
     ]
     head_sha = pr["head"]["sha"]
+    tree_data = client.get(f"/repos/{repo}/git/trees/{head_sha}", recursive="1")
+    tree = (
+        None
+        if tree_data.get("truncated")
+        else [e["path"] for e in tree_data.get("tree", []) if e.get("type") == "blob"]
+    )
     check_runs = [
         CheckRun(
             name=r["name"],
@@ -140,6 +146,7 @@ def fetch(client: Client, repo: str, number: int, root: str = ".") -> Context:
         files=files,
         comments=comments,
         check_runs=check_runs,
+        tree=tree,
     )
 
 

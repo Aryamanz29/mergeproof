@@ -44,9 +44,12 @@ def from_git(base: str = "origin/main", root: str = ".", body: str | None = None
     merge_base = git(root, "merge-base", base, "HEAD")
     files = parse_name_status(git(root, "diff", "--name-status", "-M", merge_base))
     known = {f.path for f in files}
-    for path in git(root, "ls-files", "--others", "--exclude-standard").splitlines():
-        if path and path not in known:
+    tracked = git(root, "ls-files").splitlines()
+    untracked = [p for p in git(root, "ls-files", "--others", "--exclude-standard").splitlines() if p]
+    for path in untracked:
+        if path not in known:
             files.append(ChangedFile(path=path, status="added"))
+    removed = {f.path for f in files if f.status == "removed"}
     return Context(
         source="local",
         online=False,
@@ -58,6 +61,7 @@ def from_git(base: str = "origin/main", root: str = ".", body: str | None = None
         base_sha=merge_base,
         root=root,
         files=files,
+        tree=sorted((set(tracked) | set(untracked)) - removed),
     )
 
 
