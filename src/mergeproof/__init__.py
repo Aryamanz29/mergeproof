@@ -10,7 +10,7 @@ from mergeproof.policy import Policy, PolicyError, Requirement, Rule, Severity
 from mergeproof.report import Outcome, Report, Status
 from mergeproof.verifiers.base import Verifier
 
-__version__ = "0.5.0"  # x-release-please-version
+__version__ = "0.6.0"  # x-release-please-version
 
 __all__ = [
     "ChangedFile",
