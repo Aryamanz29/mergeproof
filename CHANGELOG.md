@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). From 0.2.0 on, entries are generated
 by release-please from Conventional Commit messages.
 
+## [0.6.0](https://github.com/Aryamanz29/mergeproof/compare/v0.5.0...v0.6.0) (2026-09-12)
+
+
+### Added
+
+* **action:** the commit status is the required signal; annotations come from the job ([c2ceb4a](https://github.com/Aryamanz29/mergeproof/commit/c2ceb4a26d2153cf3bc52277095cb34db4e8d095))
+* **action:** the commit status is the required signal; annotations come from the job ([b0988f5](https://github.com/Aryamanz29/mergeproof/commit/b0988f5b9b45c0029bbd4f979e02678590e20a4e))
+
+
+### Fixed
+
+* **cli:** workflow commands only alongside text output ([4218fd7](https://github.com/Aryamanz29/mergeproof/commit/4218fd7a027e96768a5cc44b738fdea7ed84710f))
+
 ## [0.5.0](https://github.com/Aryamanz29/mergeproof/compare/v0.4.0...v0.5.0) (2026-09-12)
 
 
