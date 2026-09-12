@@ -55,6 +55,7 @@ class Context(BaseModel):
     files: list[ChangedFile] = Field(default_factory=list)
     comments: list[Comment] = Field(default_factory=list)
     check_runs: list[CheckRun] = Field(default_factory=list)
+    tree: list[str] | None = Field(default=None, description="Every path in the repository at the head, when known")
 
     @property
     def changed_paths(self) -> list[str]:

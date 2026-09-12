@@ -88,6 +88,7 @@ Changed source files come with changed test files.
 | `map` | source glob with `{captures}` mapped to a test glob template, e.g. `src/{pkg}/{name}.py: tests/**/test_{name}*.py`. Every matching changed source file needs a changed file matching its expanded template |
 | `any_of` | used when `map` is empty: pass if any changed file matches one of these globs |
 | `ignore` | source globs exempt from `map` |
+| `existing_only` | only require a test change when a file matching the expanded test glob already exists in the repository; a source whose test module does not exist yet is skipped and listed. Use it for "integration tests in the module, if the module has them" |
 
 Each uncovered source file becomes a Check Run annotation on that file.
 

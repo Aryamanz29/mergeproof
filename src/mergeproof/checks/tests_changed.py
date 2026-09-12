@@ -26,6 +26,11 @@ class TestsChanged(Check):
             description="Pass when any changed file matches one of these globs; used when `map` is empty",
         )
         ignore: list[str] = Field(default_factory=list, description="Source globs exempt from `map`")
+        existing_only: bool = Field(
+            default=False,
+            description="Only require a test change when a file matching the test glob already exists in the "
+            "repository; sources with no test module yet are skipped",
+        )
 
     def run(self, ctx: Context, params: Params, files: list[str]) -> Outcome:
         changed = ctx.changed_paths
@@ -37,6 +42,7 @@ class TestsChanged(Check):
 
         missing: dict[str, str] = {}
         covered: list[str] = []
+        without_module: list[str] = []
         for source in files:
             if patterns.matches_any(params.ignore, source):
                 continue
@@ -47,10 +53,16 @@ class TestsChanged(Check):
                 test_glob = patterns.expand(test_template, m.groupdict())
                 if any(patterns.match(test_glob, p) for p in changed):
                     covered.append(source)
+                elif params.existing_only and not self.module_exists(ctx, test_glob):
+                    without_module.append(source)
                 else:
                     missing[source] = test_glob
                 break
         if not missing and not covered:
+            if without_module:
+                return skip(
+                    f"no test module yet for {plural(len(without_module), 'changed file')}", details=without_module[:10]
+                )
             return skip("no mapped source files in this change")
         if missing:
             return fail(
@@ -63,10 +75,17 @@ class TestsChanged(Check):
                     for src, glob in missing.items()
                 ],
             )
-        return ok(f"tests changed for all {plural(len(covered), 'mapped source file')}", details=covered[:10])
+        note = f"; {plural(len(without_module), 'file')} without a test module skipped" if without_module else ""
+        return ok(f"tests changed for all {plural(len(covered), 'mapped source file')}{note}", details=covered[:10])
+
+    def module_exists(self, ctx: Context, test_glob: str) -> bool:
+        if ctx.tree is None:
+            return True  # unknown tree: be strict rather than silently lenient
+        return any(patterns.match(test_glob, path) for path in ctx.tree)
 
     def explain(self, params: Params) -> str:
         if params.map:
             pairs = "; ".join(f"`{src}` needs `{test}`" for src, test in params.map.items())
-            return f"Each changed source file needs a changed test file: {pairs}."
+            tail = " Files whose test module does not exist yet are skipped." if params.existing_only else ""
+            return f"Each changed source file needs a changed test file: {pairs}.{tail}"
         return "At least one changed test file matching " + ", ".join(f"`{g}`" for g in params.any_of) + "."

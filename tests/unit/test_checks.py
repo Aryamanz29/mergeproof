@@ -42,6 +42,22 @@ class TestTestsChanged:
         ctx = make_context(files=["src/api/generated.py"])
         assert run_check(TestsChanged(), ctx, map=MAP, ignore=["src/api/generated.py"]).status == Status.SKIP
 
+    def test_existing_only_skips_sources_without_a_test_module(self):
+        tree = ["src/api/users.py", "src/api/orders.py", "tests/unit/test_users.py"]
+        ctx = make_context(files=["src/api/users.py", "src/api/orders.py"], tree=tree)
+        strict = run_check(TestsChanged(), ctx, map=MAP)
+        assert strict.status == Status.FAIL and set(strict.data["missing"]) == {"src/api/users.py", "src/api/orders.py"}
+        lenient = run_check(TestsChanged(), ctx, map=MAP, existing_only=True)
+        assert lenient.status == Status.FAIL and list(lenient.data["missing"]) == ["src/api/users.py"]
+        ctx = make_context(files=["src/api/users.py", "tests/unit/test_users.py", "src/api/orders.py"], tree=tree)
+        out = run_check(TestsChanged(), ctx, map=MAP, existing_only=True)
+        assert out.status == Status.PASS and "1 file without a test module skipped" in out.summary
+        ctx = make_context(files=["src/api/orders.py"], tree=tree)
+        out = run_check(TestsChanged(), ctx, map=MAP, existing_only=True)
+        assert out.status == Status.SKIP and "no test module yet" in out.summary
+        unknown_tree = make_context(files=["src/api/orders.py"])
+        assert run_check(TestsChanged(), unknown_tree, map=MAP, existing_only=True).status == Status.FAIL
+
     def test_any_of_mode(self):
         assert run_check(TestsChanged(), make_context(files=["src/a.py"]), any_of=["tests/**"]).status == Status.FAIL
         ctx = make_context(files=["src/a.py", "tests/test_a.py"])
