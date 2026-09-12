@@ -19,3 +19,24 @@ Guidelines:
 - Tests that exercise a real boundary (a subprocess, an HTTP call, a git repository) belong in
   `tests/integration` and are marked `integration`.
 - Add a line to `CHANGELOG.md` under Unreleased for anything a user would notice.
+
+## Commits and releases
+
+Commit messages follow [Conventional Commits](https://www.conventionalcommits.org): `feat:`,
+`fix:`, `docs:`, `ci:`, `test:`, `chore:`; a `!` or a `BREAKING CHANGE:` footer marks a breaking
+change. The `commit-msg` hook installed by `make setup` checks the format. This is what drives
+the release process:
+
+1. Every push to `main` runs [release-please](https://github.com/googleapis/release-please), which
+   opens or updates a single pull request titled `chore(main): release X.Y.Z`. The PR bumps the
+   version in `pyproject.toml` and `src/mergeproof/__init__.py` and writes the `CHANGELOG.md`
+   entry from the commits since the last release. `feat` bumps the minor version, `fix` the
+   patch, a breaking change the major (minor while still 0.x).
+2. Review the generated changelog like any other PR; edit it in the PR if a line reads badly.
+3. Merging that PR creates the `vX.Y.Z` tag and the GitHub Release.
+4. The tag triggers `release.yml` (wheel and sdist to PyPI through trusted publishing, attached to
+   the GitHub Release) and `image.yml` (`ghcr.io/aryamanz29/mergeproof:X.Y.Z`, `:X.Y`, `:X`,
+   `:latest`).
+
+Nothing is versioned by hand. `v0.2.0` was the one manual bootstrap tag before this process
+existed.

@@ -11,7 +11,7 @@ from mergeproof.policy import Policy, PolicyError, Requirement, Rule, Severity
 from mergeproof.report import Outcome, Report, Status
 from mergeproof.verifiers.base import Verifier
 
-__version__ = "0.2.0"
+__version__ = "0.2.0"  # x-release-please-version
 
 __all__ = [
     "ChangedFile",

@@ -6,7 +6,7 @@ help:            ## show this help
 setup:           ## create the virtualenv, install everything, install git hooks
 	uv sync --extra mcp --extra otel --group dev
 	uv pip install -e examples/plugins/mergeproof-langfuse
-	uv run pre-commit install
+	uv run pre-commit install --install-hooks
 
 lint:            ## ruff + format check
 	uv run ruff check .

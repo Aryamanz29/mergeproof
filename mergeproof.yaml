@@ -46,12 +46,15 @@ rules:
         severity: warn
         with: { any_of: ["examples/*/scenarios/*.json"] }
 
-  - id: changelog
-    description: User-visible changes are recorded.
+  - id: conventional-title
+    description: The changelog is generated from commit subjects, so a PR title that is not Conventional Commits will not appear in it.
     severity: warn
     when:
-      paths: ["src/**", "action.yml"]
+      title: "^(?!(feat|fix|perf|refactor|docs|test|ci|build|chore|release)(\\(.+\\))?!?: )"
     require:
-      - check: files.changed
-        with: { all_of: ["CHANGELOG.md"] }
-        instructions: Add a line under Unreleased in CHANGELOG.md.
+      - check: pr.labels
+        name: title follows Conventional Commits
+        with: { any_of: ["changelog-not-needed"] }
+        instructions: >
+          Rename the PR to `type(scope): summary` (feat, fix, docs, ci, test, refactor, chore),
+          or add the `changelog-not-needed` label.
