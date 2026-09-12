@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.repository.default_branch }}   # read the policy from the base branch
-      - uses: Aryamanz29/mergeproof@v0.2.0
+      - uses: Aryamanz29/mergeproof@v0   # floating major; pin @v0.2.0 for an exact release
         with:
           policy: mergeproof.yaml
           pending-ok: "false"

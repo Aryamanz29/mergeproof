@@ -12,6 +12,7 @@
 [![PyPI](https://img.shields.io/pypi/v/mergeproof)](https://pypi.org/project/mergeproof/)
 [![Python](https://img.shields.io/pypi/pyversions/mergeproof)](https://pypi.org/project/mergeproof/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![GitHub Marketplace](https://img.shields.io/badge/Marketplace-mergeproof-7c3aed?logo=github)](https://github.com/marketplace/actions/mergeproof)
 
 </p>
 
@@ -169,7 +170,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { ref: ${{ github.event.repository.default_branch }} }   # policy from the base branch
-      - uses: Aryamanz29/mergeproof@v0.2.0
+      - uses: Aryamanz29/mergeproof@v0          # or pin an exact release, e.g. @v0.2.0
         env:
           MERGEPROOF_PR_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
 ```
