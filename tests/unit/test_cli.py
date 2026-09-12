@@ -123,3 +123,42 @@ def test_comment_without_github_context_is_skipped(repo, capsys):
 def test_module_entry_point():
     proc = subprocess.run([sys.executable, "-m", "mergeproof", "--version"], capture_output=True, text=True)
     assert proc.returncode == 0 and proc.stdout.startswith("mergeproof ")
+
+
+def test_publish_calls_each_channel(tmp_path, monkeypatch, capsys):
+    from mergeproof.policy import Severity
+    from mergeproof.providers import github
+    from mergeproof.report import Outcome, Report, RequirementResult, RuleResult, Status
+
+    report = Report(
+        source="github",
+        repo="o/r",
+        number=3,
+        head_sha="a" * 40,
+        rules=[
+            RuleResult(
+                id="r",
+                severity=Severity.BLOCK,
+                matched=True,
+                requirements=[
+                    RequirementResult(
+                        label="x",
+                        check="pr.body",
+                        severity=Severity.BLOCK,
+                        outcome=Outcome(status=Status.PASS, summary="ok"),
+                    )
+                ],
+            )
+        ],
+    )
+    path = tmp_path / "report.json"
+    path.write_text(report.to_json())
+    calls = []
+    monkeypatch.setattr(github, "client_from_env", lambda: object())
+    monkeypatch.setattr(github, "upsert_comment", lambda *a: calls.append("comment") or "https://c/1")
+    monkeypatch.setattr(github, "set_commit_status", lambda *a: calls.append("status"))
+    monkeypatch.setattr(github, "create_check_run", lambda *a: calls.append("check") or "https://k/1")
+    assert run("comment", path, "--status", "--check-run") == 0
+    assert calls == ["comment", "check", "status"]
+    err = capsys.readouterr().err
+    assert "comment at https://c/1" in err and "commit status success" in err

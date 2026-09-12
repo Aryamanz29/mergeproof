@@ -9,6 +9,7 @@ from typing import Any
 import httpx
 
 from mergeproof.context import ChangedFile, CheckRun, Comment, Context, ContextError
+from mergeproof.report import Annotation, Status
 
 API_URL = "https://api.github.com"
 
@@ -158,3 +159,68 @@ def write_output(name: str, value: str) -> None:
     if path:
         with open(path, "a", encoding="utf-8") as fh:
             fh.write(f"{name}={value}\n")
+
+
+STATUS_STATE = {Status.PASS: "success", Status.WARN: "success", Status.PENDING: "pending", Status.FAIL: "failure"}
+CHECK_CONCLUSION = {
+    Status.PASS: "success",
+    Status.WARN: "neutral",
+    Status.PENDING: "action_required",
+    Status.FAIL: "failure",
+}
+
+
+def set_commit_status(
+    client: Client, repo: str, sha: str, verdict: Status, description: str, target_url: str | None
+) -> None:
+    """The line in the merge box. Requireable in branch protection under the context `mergeproof`."""
+    payload: dict[str, Any] = {
+        "state": STATUS_STATE[verdict],
+        "context": "mergeproof",
+        "description": description[:140],
+    }
+    if target_url:
+        payload["target_url"] = target_url
+    client.post(f"/repos/{repo}/statuses/{sha}", payload)
+
+
+def create_check_run(
+    client: Client,
+    repo: str,
+    sha: str,
+    verdict: Status,
+    title: str,
+    summary: str,
+    annotations: list[Annotation],
+    details_url: str | None = None,
+) -> str:
+    """A Check Run with file annotations, shown in the Checks tab and inline in the diff."""
+    payload: dict[str, Any] = {
+        "name": "mergeproof",
+        "head_sha": sha,
+        "status": "completed",
+        "conclusion": CHECK_CONCLUSION[verdict],
+        "output": {
+            "title": title[:255],
+            "summary": summary[:65535],
+            "annotations": [
+                {
+                    "path": a.path,
+                    "start_line": a.line,
+                    "end_line": a.line,
+                    "annotation_level": "failure" if verdict == Status.FAIL else "warning",
+                    "message": a.message[:64000],
+                }
+                for a in annotations[:50]
+            ],
+        },
+    }
+    if details_url:
+        payload["details_url"] = details_url
+    created = client.post(f"/repos/{repo}/check-runs", payload)
+    return str(created.get("html_url", ""))
+
+
+def run_url() -> str | None:
+    server, repo, run_id = (os.environ.get(k) for k in ("GITHUB_SERVER_URL", "GITHUB_REPOSITORY", "GITHUB_RUN_ID"))
+    return f"{server}/{repo}/actions/runs/{run_id}" if server and repo and run_id else None

@@ -99,6 +99,16 @@ def add_context_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--gh", action="store_true", help="local mode: take title, body and labels from `gh pr view`")
 
 
+def add_publish_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--comment", action="store_true", help="create or update the sticky PR comment")
+    parser.add_argument(
+        "--status", action="store_true", help="set the `mergeproof` commit status (needs statuses: write)"
+    )
+    parser.add_argument(
+        "--check-run", action="store_true", help="create a Check Run with file annotations (needs checks: write)"
+    )
+
+
 def build_context(args: argparse.Namespace) -> Context:
     try:
         if args.context:
@@ -154,17 +164,38 @@ def cmd_check(args: argparse.Namespace) -> int:
     return report.exit_code
 
 
-def publish(report: Report) -> None:
-    if report.source != "github" or not report.repo or report.number is None:
-        print("mergeproof: --comment needs a GitHub context; skipping", file=sys.stderr)
+def publish(report: Report, comment: bool = True, status: bool = False, check_run: bool = False) -> None:
+    """Report back to GitHub: the sticky comment, the commit status line, the Check Run with annotations."""
+    if report.source != "github" or not report.repo or report.number is None or not report.head_sha:
+        print("mergeproof: publishing needs a GitHub context; skipping", file=sys.stderr)
         return
+    link = github.run_url()
     try:
-        url = github.upsert_comment(
-            github.client_from_env(), report.repo, report.number, render.report_markdown(report), render.MARKER
-        )
+        client = github.client_from_env()
+        if comment:
+            link = (
+                github.upsert_comment(client, report.repo, report.number, render.report_markdown(report), render.MARKER)
+                or link
+            )
+            print(f"mergeproof: comment at {link}", file=sys.stderr)
+        if check_run:
+            summary = render.report_markdown(report, marker=False)
+            url = github.create_check_run(
+                client,
+                report.repo,
+                report.head_sha,
+                report.verdict,
+                report.headline(),
+                summary,
+                report.annotations(),
+                link,
+            )
+            print(f"mergeproof: check run at {url}", file=sys.stderr)
+        if status:
+            github.set_commit_status(client, report.repo, report.head_sha, report.verdict, report.headline(), link)
+            print(f"mergeproof: commit status {github.STATUS_STATE[report.verdict]}", file=sys.stderr)
     except (ContextError, httpx.HTTPError) as exc:
-        die(f"could not post the comment: {exc}")
-    print(f"mergeproof: report posted at {url}", file=sys.stderr)
+        die(f"could not publish the report: {exc}")
 
 
 def cmd_explain(args: argparse.Namespace) -> int:
@@ -211,7 +242,7 @@ def cmd_report(args: argparse.Namespace) -> int:
 
 
 def cmd_comment(args: argparse.Namespace) -> int:
-    publish(read_report(args.report))
+    publish(read_report(args.report), comment=True, status=args.status, check_run=args.check_run)
     return 0
 
 
@@ -280,7 +311,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_context_args(p)
     p.add_argument("-f", "--format", choices=render.FORMATS, default="text")
     p.add_argument("-o", "--output", metavar="FILE", help="also write the JSON report here")
-    p.add_argument("--comment", action="store_true", help="create or update the sticky PR comment")
+    add_publish_args(p)
     p.add_argument("-q", "--quiet", action="store_true")
     p.set_defaults(func=cmd_check)
 
@@ -305,8 +336,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--exit-status", action="store_true", help="exit with the report's verdict code")
     p.set_defaults(func=cmd_report)
 
-    p = sub.add_parser("comment", help="post a JSON report as the sticky PR comment")
+    p = sub.add_parser("comment", help="post a JSON report to the PR: sticky comment, optionally status and check run")
     p.add_argument("report", nargs="?", default="-")
+    p.add_argument("--status", action="store_true", help="also set the `mergeproof` commit status")
+    p.add_argument("--check-run", action="store_true", help="also create a Check Run with file annotations")
     p.set_defaults(func=cmd_comment)
 
     p = sub.add_parser("validate", help="check the policy file")

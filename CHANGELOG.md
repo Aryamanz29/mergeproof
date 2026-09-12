@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Reporting through the commit status (`--status`) and a Check Run with file annotations (`--check-run`); the action enables both by default.
+
+### Changed
+- The PR comment leads with a headline count, caps details, and carries the evaluation time.
+
+### Added
 - Container image `ghcr.io/aryamanz29/mergeproof` with the CLI and MCP server; published on every release tag.
 - `mergeproof[otel]`: the MCP server exports OpenTelemetry spans over OTLP/HTTP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set (Langfuse, Jaeger, Phoenix, any collector).
 ### Changed

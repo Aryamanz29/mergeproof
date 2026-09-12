@@ -117,6 +117,16 @@ def test_no_rules_apply(pol, registry):
     assert "nothing to check" in render.report_text(report)
 
 
+def test_headline_counts_and_annotations(pol, registry):
+    report = engine.evaluate(pol, make_context(files=["app/tools/lineage.py"]), registry)
+    assert report.headline().startswith("0 of 5 requirements satisfied")
+    assert "1 pending" in report.headline() and "fail" in report.headline()
+    notes = report.annotations()
+    assert notes and notes[0].path == "app/tools/lineage.py" and "test_lineage" in notes[0].message
+    empty = engine.evaluate(pol, make_context(files=["README.md"], title="docs"), registry)
+    assert empty.headline() == "no rules apply to this change"
+
+
 def test_report_json_roundtrip(pol, registry):
     report = engine.evaluate(pol, make_context(files=["app/tools/x.py"]), registry)
     again = Report.from_json(report.to_json())

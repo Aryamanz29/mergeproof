@@ -34,9 +34,11 @@ def test_markdown_comment_has_marker_table_and_template():
     _, _, report = make_report()
     text = render.report_markdown(report)
     assert text.startswith(render.MARKER)
-    assert "| `needs-evidence` | evidence.field |" in text
-    assert "<sub>(warn)</sub>" in text
-    assert "### Still needed" in text and "Use the staging tenant." in text
+    assert "**0 of 2 requirements satisfied, 2 fail**" in text
+    assert "| ❌ | evidence.field | `needs-evidence` |" in text
+    assert "<sub>warn</sub>" in text
+    assert "### What to do" in text and "Use the staging tenant." in text
+    assert "Evaluated " in text
     assert "```evidence\nenvironment: staging\n```" in text
     assert render.MARKER not in render.report_markdown(report, marker=False)
 
