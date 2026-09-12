@@ -17,11 +17,11 @@ inputs:
   comment:
     description: Create or update the sticky PR comment
     default: "true"
-  check-run:
-    description: Create the `mergeproof` Check Run with the report and file annotations (needs checks:write); require it in your ruleset
-    default: "true"
   status:
-    description: Also set a `mergeproof` commit status (needs statuses:write). Off by default because it duplicates the Check Run row
+    description: Set the `mergeproof` commit status (needs statuses:write). This is the row to require; it is re-evaluated correctly on re-runs of the same commit
+    default: "true"
+  check-run:
+    description: Also create a `mergeproof` Check Run (needs checks:write). Off by default; file annotations already land on the job through workflow commands
     default: "false"
   pending-ok:
     description: Succeed while evidence is still pending instead of failing the check

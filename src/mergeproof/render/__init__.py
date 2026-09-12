@@ -1,5 +1,6 @@
 """Turn a :class:`Report` into text for a terminal, Markdown for a PR, or a prompt for an agent."""
 
+from mergeproof.render.actions import workflow_commands
 from mergeproof.render.agent import agent_prompt
 from mergeproof.render.junit import junit_xml
 from mergeproof.render.markdown import MARKER, explain_markdown, report_markdown
@@ -17,4 +18,5 @@ __all__ = [
     "rdjson",
     "report_markdown",
     "report_text",
+    "workflow_commands",
 ]

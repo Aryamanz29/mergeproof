@@ -89,15 +89,15 @@ jobs:
           MERGEPROOF_PR_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
 ```
 
-**3. Require the `mergeproof` check** in a ruleset on your default branch. That single required
+**3. Require the `mergeproof` status** in a ruleset on your default branch. That single required
 check stands for everything the policy asks for, CI jobs included. See [docs/github.md](docs/github.md).
 
 ## What a pull request sees
 
 <p align="center"><img src="docs/pr-comment.svg" alt="The mergeproof comment on a pull request" width="760"></p>
 
-One comment updated in place and one `mergeproof` Check Run, requireable, whose annotations land on
-the files concerned. Contributors put evidence in the PR description as a fenced
+One comment updated in place, a `mergeproof` commit status in the merge box that rulesets can
+require, and file annotations on the job for anything that points at a file. Contributors put evidence in the PR description as a fenced
 block that agents can write and machines can read:
 
 ````markdown

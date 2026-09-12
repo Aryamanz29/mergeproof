@@ -296,6 +296,18 @@ def test_github_only_checks_are_flagged(check):
     assert check.needs_github
 
 
+def test_broken_plugin_entry_points_are_skipped(monkeypatch, capsys):
+    from importlib.metadata import EntryPoint
+
+    from mergeproof.checks import registry as registry_module
+
+    broken = EntryPoint(name="x.broken", value="no_such_module:Check", group="mergeproof.checks")
+    monkeypatch.setattr(registry_module, "entry_points", lambda group: [broken])
+    reg = registry_module.load_registry()
+    assert "x.broken" not in reg.ids() and "tests.changed" in reg.ids()
+    assert "x.broken" in capsys.readouterr().err
+
+
 def test_all_checks_have_ids_and_descriptions(registry):
     for check_id, cls in registry.items():
         assert re.fullmatch(r"[a-z_]+(\.[a-z_]+)?", check_id)
