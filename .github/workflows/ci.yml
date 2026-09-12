@@ -80,7 +80,7 @@ jobs:
             | docker run -i --rm -v "$PWD":/repo mergeproof:ci mcp | grep -q '"serverInfo"'
 
   gate:
-    name: 🛡️ mergeproof gate
+    name: 🛡️ gate
     if: github.event_name == 'pull_request'
     needs: [lint, unit, integration]
     runs-on: ubuntu-latest
@@ -96,12 +96,3 @@ jobs:
         with:
           version: "."
           pending-ok: "true"
-      - name: Render the requirements as a test report
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always() && hashFiles('mergeproof-junit.xml') != ''
-        with:
-          check_name: mergeproof requirements
-          files: mergeproof-junit.xml
-          comment_mode: off
-          action_fail: false
-          action_fail_on_inconclusive: false

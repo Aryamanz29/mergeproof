@@ -23,8 +23,8 @@ Copy [`examples/github-workflow.yml`](../examples/github-workflow.yml) to
 | `version` | `mergeproof` | pip requirement to install: a version spec, a path, a git URL |
 | `plugins` | | extra pip requirements, e.g. verifier plugins |
 | `comment` | `true` | create or update the sticky comment |
-| `status` | `true` | set the `mergeproof` commit status |
-| `check-run` | `true` | create the Check Run with annotations |
+| `check-run` | `true` | create the `mergeproof` Check Run with the report and annotations; this is the row to require |
+| `status` | `false` | also set a `mergeproof` commit status; off because it duplicates the Check Run row |
 | `pending-ok` | `false` | let the job succeed while evidence is pending; the status still says pending |
 | `github-token` | `${{ github.token }}` | token used for all three channels |
 
@@ -35,8 +35,8 @@ Pin `@v0` to follow releases, or `@v0.2.0` for an exact one.
 
 ## Making it block: the ruleset
 
-GitHub merges anything unless a ruleset requires specific checks. Require **one** context,
-`mergeproof`; the policy decides what stands behind it, CI jobs included (see the `ci-green` rule
+GitHub merges anything unless a ruleset requires specific checks. Require **one** check,
+`mergeproof` (the Check Run's name); the policy decides what stands behind it, CI jobs included (see the `ci-green` rule
 in this repository's own `mergeproof.yaml`). Rulesets need a public repository or a paid plan.
 
 ```sh
@@ -63,8 +63,8 @@ status blocks the merge button. Green job, blocked merge, clear reason.
 | channel | where it shows | what it carries |
 |---|---|---|
 | comment | the PR conversation, one comment updated in place | headline, table of requirements, next steps, evidence template |
-| commit status | the merge box, requireable | `🛡️ 3 of 5 requirements satisfied, 2 pending`, linking to the comment |
-| Check Run | the Checks tab | the full report, plus annotations on files (e.g. "expected a changed test matching …" on the source file) |
+| Check Run | the checks list and the Checks tab, requireable | `🛡️ 3 of 5 requirements satisfied, 2 pending`, the full report, and annotations on files (e.g. "expected a changed test matching …" on the source file) |
+| commit status (opt-in) | the merge box | the same headline, for tooling that reads statuses rather than check runs |
 
 No comment is posted when no rule applies to a change; an existing comment is still updated.
 
