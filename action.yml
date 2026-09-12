@@ -17,12 +17,12 @@ inputs:
   comment:
     description: Create or update the sticky PR comment
     default: "true"
-  status:
-    description: Set the `mergeproof` commit status (needs statuses:write); require it in branch protection
-    default: "true"
   check-run:
-    description: Create a Check Run with file annotations (needs checks:write)
+    description: Create the `mergeproof` Check Run with the report and file annotations (needs checks:write); require it in your ruleset
     default: "true"
+  status:
+    description: Also set a `mergeproof` commit status (needs statuses:write). Off by default because it duplicates the Check Run row
+    default: "false"
   pending-ok:
     description: Succeed while evidence is still pending instead of failing the check
     default: "false"
