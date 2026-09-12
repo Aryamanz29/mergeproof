@@ -164,6 +164,7 @@ on:
   check_suite:   { types: [completed] }         # re-check when CI finishes
 jobs:
   gate:
+    name: 🛡️ mergeproof
     if: github.event_name != 'issue_comment' || github.event.issue.pull_request
     runs-on: ubuntu-latest
     permissions: { contents: read, pull-requests: write, statuses: write, checks: write }
@@ -224,8 +225,10 @@ file annotation). Any renderer for those formats then does the presentation:
 `dorny/test-reporter` reads the same JUnit file. Locally, `mergeproof check -f junit` and
 `-f rdjson` print the same documents.
 
-By default all three appear under `github-actions[bot]` with GitHub's avatar, because that is whose
-token created them. To have them show as **mergeproof** with the shield:
+The check run title and the status description start with 🛡️, and naming the job `🛡️ mergeproof`
+puts the mark on the job row too. The avatar next to a row is a different thing: it belongs to
+whose token created it. By default all three appear under `github-actions[bot]` with GitHub's
+avatar. To have them show as **mergeproof** with the shield:
 
 1. Create a GitHub App named mergeproof (avatar `docs/logo.png`; repository permissions: Pull
    requests write, Checks write, Commit statuses write, Contents read; no webhook).

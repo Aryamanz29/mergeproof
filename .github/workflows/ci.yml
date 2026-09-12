@@ -80,7 +80,7 @@ jobs:
             | docker run -i --rm -v "$PWD":/repo mergeproof:ci mcp | grep -q '"serverInfo"'
 
   gate:
-    name: gate (this repo's own policy)
+    name: 🛡️ mergeproof gate
     if: github.event_name == 'pull_request'
     needs: [lint, unit, integration]
     runs-on: ubuntu-latest

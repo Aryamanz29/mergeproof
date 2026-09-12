@@ -174,6 +174,14 @@ def write_output(name: str, value: str) -> None:
 
 
 STATUS_STATE = {Status.PASS: "success", Status.WARN: "success", Status.PENDING: "pending", Status.FAIL: "failure"}
+MARK = "🛡️"
+
+
+def titled(text: str) -> str:
+    """The headline as it appears on check and status rows, carrying the mark whatever token posted it."""
+    return f"{MARK} {text}"
+
+
 CHECK_CONCLUSION = {
     Status.PASS: "success",
     Status.WARN: "neutral",
@@ -189,7 +197,7 @@ def set_commit_status(
     payload: dict[str, Any] = {
         "state": STATUS_STATE[verdict],
         "context": "mergeproof",
-        "description": description[:140],
+        "description": titled(description)[:140],
     }
     if target_url:
         payload["target_url"] = target_url
@@ -213,7 +221,7 @@ def create_check_run(
         "status": "completed",
         "conclusion": CHECK_CONCLUSION[verdict],
         "output": {
-            "title": title[:255],
+            "title": titled(title)[:255],
             "summary": summary[:65535],
             "annotations": [
                 {
