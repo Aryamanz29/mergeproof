@@ -174,6 +174,17 @@ def write_output(name: str, value: str) -> None:
 
 
 STATUS_STATE = {Status.PASS: "success", Status.WARN: "success", Status.PENDING: "pending", Status.FAIL: "failure"}
+MARK = "🛡️"
+
+
+def titled(text: str) -> str:
+    """The headline on the Check Run row, carrying the mark whatever token posted it.
+
+    Only the Check Run gets it: the commit status API rejects descriptions containing emoji.
+    """
+    return f"{MARK} {text}"
+
+
 CHECK_CONCLUSION = {
     Status.PASS: "success",
     Status.WARN: "neutral",
@@ -213,7 +224,7 @@ def create_check_run(
         "status": "completed",
         "conclusion": CHECK_CONCLUSION[verdict],
         "output": {
-            "title": title[:255],
+            "title": titled(title)[:255],
             "summary": summary[:65535],
             "annotations": [
                 {

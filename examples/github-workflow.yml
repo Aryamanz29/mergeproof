@@ -11,6 +11,7 @@ on:
 
 jobs:
   gate:
+    name: 🛡️ mergeproof        # the job name is free text; GitHub renders the emoji on the checks list
     if: github.event_name != 'issue_comment' || github.event.issue.pull_request
     runs-on: ubuntu-latest
     permissions:

@@ -189,13 +189,15 @@ def test_commit_status_and_check_run_payloads():
     github.set_commit_status(client, "o/r", "abc", Status.PENDING, "x" * 200, "https://run")
     sent = json.loads(status.calls[0].request.content)
     assert sent["state"] == "pending" and sent["context"] == "mergeproof"
-    assert len(sent["description"]) == 140 and sent["target_url"] == "https://run"
+    assert sent["description"] == "x" * 140  # the status API rejects emoji; the mark lives on the Check Run
+    assert sent["target_url"] == "https://run"
 
     notes = [Annotation(path="src/a.py", message="expected a test")]
     url = github.create_check_run(client, "o/r", "abc", Status.FAIL, "0 of 1", "## summary", notes, "https://run")
     assert url == "https://c/1"
     sent = json.loads(check.calls[0].request.content)
     assert sent["conclusion"] == "failure" and sent["name"] == "mergeproof" and sent["details_url"] == "https://run"
+    assert sent["output"]["title"] == "🛡️ 0 of 1"
     note = sent["output"]["annotations"][0]
     assert note == {
         "path": "src/a.py",
