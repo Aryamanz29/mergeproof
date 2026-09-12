@@ -27,10 +27,13 @@ jobs:
           version="${GITHUB_REF_NAME#v}"
           awk -v v="$version" '/^## \[/{p = index($0, "[" v "]") > 0; next} p' CHANGELOG.md > notes.md
           test -s notes.md || echo "See CHANGELOG.md." > notes.md
-      - name: GitHub Release with the wheel and sdist attached
+      - name: GitHub Release with the wheel and sdist attached (created here only if release-please has not)
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --notes-file notes.md
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 \
+            || gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md
+          gh release upload "$GITHUB_REF_NAME" dist/* --clobber
 
   publish:
     needs: [build]
