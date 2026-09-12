@@ -39,7 +39,7 @@ jobs:
           test -s notes.md || echo "See CHANGELOG.md." > notes.md
       - name: "Move the floating major tag so uses: Aryamanz29/mergeproof@v0 follows this release"
         run: |
-          major="v${GITHUB_REF_NAME#v}"; major="${major%%.*}"
+          ref="${TAG:-$GITHUB_REF_NAME}"; major="v${ref#v}"; major="${major%%.*}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -f "$major" "${TAG:-$GITHUB_REF_NAME}"
