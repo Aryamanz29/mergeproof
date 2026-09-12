@@ -74,6 +74,11 @@ def test_plumbing_round_trip(repo, capsys, monkeypatch):
     assert run("report", repo / "report.json", "-f", "md") == 0
     assert "need attention" in capsys.readouterr().out
     assert run("report", repo / "report.json", "--exit-status") == 1
+    capsys.readouterr()
+    assert run("report", repo / "report.json", "-f", "junit") == 0
+    assert capsys.readouterr().out.startswith("<?xml")
+    assert run("report", repo / "report.json", "-f", "rdjson") == 0
+    assert '"source"' in capsys.readouterr().out
     monkeypatch.setattr(sys, "stdin", io.StringIO((repo / "report.json").read_text()))
     assert run("report", "-", "-f", "text") == 0
     assert "FAIL" in capsys.readouterr().out

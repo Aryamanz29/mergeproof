@@ -9,6 +9,9 @@ All notable changes to this project are documented here. The format follows
 - PR comment redesigned: logo, status badge and links in the header, one plain sentence, one table with a Status column in words, numbered next steps only when something is missing, and no comment at all when no rule applies.
 
 ### Added
+- `-f junit` and `-f rdjson` renderings, written by the action, so test-result reporters and reviewdog can present the gate.
+
+### Added
 - Container image `ghcr.io/aryamanz29/mergeproof` with the CLI and MCP server; `:edge` on every push to main, version tags and `:latest` on releases.
 - Reporting through the commit status (`--status`) and a Check Run with file annotations (`--check-run`); the action enables both by default.
 

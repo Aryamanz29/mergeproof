@@ -34,6 +34,15 @@ outputs:
   verdict:
     description: pass, warn, pending or fail
     value: ${{ steps.gate.outputs.verdict }}
+  report:
+    description: Path of the JSON report
+    value: mergeproof-report.json
+  junit:
+    description: Path of the JUnit XML rendering, for test-result reporters
+    value: mergeproof-junit.xml
+  rdjson:
+    description: Path of the reviewdog rendering, for inline review comments
+    value: mergeproof.rdjson
 
 runs:
   using: composite
@@ -56,6 +65,10 @@ runs:
         mergeproof "${args[@]}"
         code=$?
         set -e
+        if [ -f mergeproof-report.json ]; then
+          mergeproof report mergeproof-report.json -f junit > mergeproof-junit.xml
+          mergeproof report mergeproof-report.json -f rdjson > mergeproof.rdjson
+        fi
         if [ "$code" = "2" ] && [ "${{ inputs.pending-ok }}" = "true" ]; then
           echo "evidence pending; not failing because pending-ok is set"
           exit 0
@@ -65,5 +78,8 @@ runs:
       if: always()
       with:
         name: mergeproof-report
-        path: mergeproof-report.json
+        path: |
+          mergeproof-report.json
+          mergeproof-junit.xml
+          mergeproof.rdjson
         if-no-files-found: ignore

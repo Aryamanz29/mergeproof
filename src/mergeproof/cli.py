@@ -145,6 +145,10 @@ def emit(report: Report, fmt: str) -> str:
         return report.to_json()
     if fmt == "md":
         return render.report_markdown(report, marker=False)
+    if fmt == "junit":
+        return render.junit_xml(report)
+    if fmt == "rdjson":
+        return render.rdjson(report)
     return render.report_text(report)
 
 
@@ -327,7 +331,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("explain", help="what this change must prove and what is missing")
     add_policy_arg(p)
     add_context_args(p)
-    p.add_argument("-f", "--format", choices=render.FORMATS, default="md")
+    p.add_argument("-f", "--format", choices=("text", "md", "json"), default="md")
     p.set_defaults(func=cmd_explain)
 
     p = sub.add_parser("template", help="print the evidence block still missing for this change")

@@ -203,6 +203,26 @@ With `pending-ok: "true"` the workflow job stays green while evidence is outstan
 `mergeproof` status stays `pending`, and a pending required status blocks the merge button. That
 split is deliberate: the job says the tool ran, the status says whether the evidence is there.
 
+### Rendering with tools you already use
+
+The action also writes the report as **JUnit XML** (`mergeproof-junit.xml`, one suite per rule,
+one case per requirement) and in **reviewdog's format** (`mergeproof.rdjson`, one diagnostic per
+file annotation). Any renderer for those formats then does the presentation:
+
+```yaml
+      - uses: Aryamanz29/mergeproof@v0.2.0
+        id: gate
+      - uses: EnricoMi/publish-unit-test-result-action@v2     # rich check run: counts, per-requirement detail, trends
+        if: always()
+        with: { files: mergeproof-junit.xml, check_name: mergeproof requirements, comment_mode: off }
+      - uses: reviewdog/action-setup@v1                       # inline review comments on the files concerned
+      - run: reviewdog -f=rdjson -reporter=github-pr-review -level=error < mergeproof.rdjson
+        env: { REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }} }
+```
+
+`dorny/test-reporter` reads the same JUnit file. Locally, `mergeproof check -f junit` and
+`-f rdjson` print the same documents.
+
 By default all three appear under `github-actions[bot]` with GitHub's avatar. To have them show
 as **mergeproof** with the shield, create a GitHub App named mergeproof (avatar `docs/logo.svg`,
 permissions: pull requests write, checks write, commit statuses write), install it on the repo,
