@@ -1,11 +1,19 @@
-# mergeproof
+<p align="center">
+  <img src="docs/logo.svg" alt="mergeproof" width="128">
+</p>
 
-**Proof before merge.** Pull requests earn their merge with evidence, not claims.
+<h1 align="center">mergeproof</h1>
+
+<p align="center"><strong>Proof before merge.</strong> Pull requests earn their merge with evidence, not claims.</p>
+
+<p align="center">
 
 [![CI](https://github.com/Aryamanz29/mergeproof/actions/workflows/ci.yml/badge.svg)](https://github.com/Aryamanz29/mergeproof/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/mergeproof)](https://pypi.org/project/mergeproof/)
 [![Python](https://img.shields.io/pypi/pyversions/mergeproof)](https://pypi.org/project/mergeproof/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+</p>
 
 `mergeproof` is an evidence gate for pull requests. One YAML file says what a change must
 *prove* before it merges: tests for the modules it touched, a green integration job,
