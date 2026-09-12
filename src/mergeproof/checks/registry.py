@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from importlib.metadata import entry_points
 
 from mergeproof.checks.base import Check
@@ -61,6 +62,10 @@ def load_registry(plugins: bool = True) -> Registry:
     registry = builtin_registry()
     if plugins:
         for ep in entry_points(group=ENTRY_POINT_GROUP):
-            if not ep.value.startswith("mergeproof.checks."):
+            if ep.value.startswith("mergeproof.checks."):
+                continue
+            try:
                 registry.add(ep.load())
+            except Exception as exc:  # a broken plugin must not take the CLI down
+                print(f"mergeproof: plugin check {ep.name!r} could not be loaded: {exc}", file=sys.stderr)
     return registry

@@ -162,6 +162,9 @@ def cmd_check(args: argparse.Namespace) -> int:
         Path(args.output).write_text(report.to_json(), encoding="utf-8")
     if not args.quiet:
         print(emit(report, args.format))
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        for line in render.workflow_commands(report):
+            print(line)
     github.write_step_summary(render.report_markdown(report))
     github.write_output("verdict", report.verdict.value)
     if args.comment or args.status or args.check_run:
