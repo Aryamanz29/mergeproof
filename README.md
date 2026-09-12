@@ -224,10 +224,20 @@ file annotation). Any renderer for those formats then does the presentation:
 `dorny/test-reporter` reads the same JUnit file. Locally, `mergeproof check -f junit` and
 `-f rdjson` print the same documents.
 
-By default all three appear under `github-actions[bot]` with GitHub's avatar. To have them show
-as **mergeproof** with the shield, create a GitHub App named mergeproof (avatar `docs/logo.svg`,
-permissions: pull requests write, checks write, commit statuses write), install it on the repo,
-and mint its token in the workflow:
+By default all three appear under `github-actions[bot]` with GitHub's avatar, because that is whose
+token created them. To have them show as **mergeproof** with the shield:
+
+1. Create a GitHub App named mergeproof (avatar `docs/logo.png`; repository permissions: Pull
+   requests write, Checks write, Commit statuses write, Contents read; no webhook).
+2. Install it on the repository.
+3. Generate a private key and store it, together with the App ID, where the workflow can read them:
+
+   ```sh
+   gh variable set MERGEPROOF_APP_ID --body <app id> --repo OWNER/REPO
+   gh secret set MERGEPROOF_APP_KEY --repo OWNER/REPO < mergeproof.private-key.pem
+   ```
+
+4. Mint the token in the workflow and pass it to the action:
 
 ```yaml
       - uses: actions/create-github-app-token@v1
