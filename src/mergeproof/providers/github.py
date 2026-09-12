@@ -115,7 +115,13 @@ def fetch(client: Client, repo: str, number: int, root: str = ".") -> Context:
     ]
     head_sha = pr["head"]["sha"]
     check_runs = [
-        CheckRun(name=r["name"], status=r["status"], conclusion=r.get("conclusion"), url=r.get("html_url"))
+        CheckRun(
+            name=r["name"],
+            status=r["status"],
+            conclusion=r.get("conclusion"),
+            url=r.get("html_url"),
+            started_at=r.get("started_at") or "",
+        )
         for r in client.paginate(f"/repos/{repo}/commits/{head_sha}/check-runs", key="check_runs")
     ]
     return Context(

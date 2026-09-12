@@ -9,6 +9,7 @@ All notable changes to this project are documented here. The format follows
 - Reporting through the commit status (`--status`) and a Check Run with file annotations (`--check-run`); the action enables both by default.
 
 ### Changed
+- `ci.job_passed` considers only the newest check run per name, so runs cancelled by a newer push no longer count as failures.
 - The PR comment leads with a headline count, caps details, and carries the evaluation time.
 
 ### Added

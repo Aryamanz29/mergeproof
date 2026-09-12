@@ -167,6 +167,22 @@ class TestCiJobPassed:
         assert run_check(CiJobPassed(), ctx, name="unit (3.12)", min_matches=2).status == Status.FAIL
         assert run_check(CiJobPassed(), make_context(online=False), name="lint").status == Status.PENDING
 
+    def test_only_the_newest_run_per_name_counts(self):
+        runs = [
+            CheckRun(name="unit (3.12)", status="completed", conclusion="cancelled", started_at="2026-01-01T10:00:00Z"),
+            CheckRun(name="unit (3.12)", status="completed", conclusion="success", started_at="2026-01-01T10:05:00Z"),
+            CheckRun(name="integration", status="completed", conclusion="success", started_at="2026-01-01T10:00:00Z"),
+            CheckRun(name="integration", status="in_progress", started_at="2026-01-01T10:05:00Z"),
+        ]
+        ctx = make_context(check_runs=runs)
+        assert run_check(CiJobPassed(), ctx, name="unit (3.12)").status == Status.PASS
+        assert run_check(CiJobPassed(), ctx, name="integration").status == Status.PENDING
+        superseded_failure = [
+            CheckRun(name="lint", status="completed", conclusion="failure", started_at="2026-01-01T10:00:00Z"),
+            CheckRun(name="lint", status="completed", conclusion="success", started_at="2026-01-01T10:09:00Z"),
+        ]
+        assert run_check(CiJobPassed(), make_context(check_runs=superseded_failure), name="lint").status == Status.PASS
+
 
 class TestHumanVerified:
     def test_who_may_verify(self):

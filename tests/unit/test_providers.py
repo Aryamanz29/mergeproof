@@ -94,14 +94,24 @@ def test_fetch_builds_a_full_context():
     respx.get(f"{api}/repos/o/r/pulls/7/comments").mock(return_value=httpx.Response(200, json=[]))
     respx.get(f"{api}/repos/o/r/commits/{'a' * 40}/check-runs").mock(
         return_value=httpx.Response(
-            200, json={"check_runs": [{"name": "unit", "status": "completed", "conclusion": "success"}]}
+            200,
+            json={
+                "check_runs": [
+                    {
+                        "name": "unit",
+                        "status": "completed",
+                        "conclusion": "success",
+                        "started_at": "2026-01-01T00:00:00Z",
+                    }
+                ]
+            },
         )
     )
     ctx = github.fetch(github.Client("tok"), "o/r", 7)
     assert ctx.online and ctx.source == "github" and ctx.repo == "o/r" and ctx.number == 7
     assert ctx.labels == ["bug"] and ctx.head_short == "aaaaaaa"
     assert [c.kind for c in ctx.comments] == ["comment", "review"]
-    assert ctx.check_runs[0].conclusion == "success"
+    assert ctx.check_runs[0].conclusion == "success" and ctx.check_runs[0].started_at == "2026-01-01T00:00:00Z"
     assert ctx.evidence().get("environment") == "staging"
     assert Context.from_json(ctx.to_json()) == ctx
 
