@@ -15,17 +15,10 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      # A token from the mergeproof GitHub App lets the release PR trigger CI. Without the
-      # App configured, the workflow token is used and the release PR's checks must be
-      # started by closing and reopening it once.
-      - uses: actions/create-github-app-token@v1
-        id: app
-        if: ${{ vars.MERGEPROOF_APP_ID != '' }}
-        with:
-          app-id: ${{ vars.MERGEPROOF_APP_ID }}
-          private-key: ${{ secrets.MERGEPROOF_APP_KEY }}
+      # The workflow token cannot trigger other workflows, so CI does not start on the release PR
+      # by itself; close and reopen it once, or push to it, and the checks run.
       - uses: googleapis/release-please-action@v4
         with:
-          token: ${{ steps.app.outputs.token || github.token }}
+          token: ${{ github.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json

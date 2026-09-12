@@ -33,6 +33,8 @@ the release process:
    entry from the commits since the last release. `feat` bumps the minor version, `fix` the
    patch, a breaking change the major (minor while still 0.x).
 2. Review the generated changelog like any other PR; edit it in the PR if a line reads badly.
+   The PR is opened with the workflow token, which cannot start CI; close and reopen it once
+   (or push to it) and the checks run.
 3. Merging that PR creates the `vX.Y.Z` tag and the GitHub Release.
 4. The tag triggers `release.yml` (wheel and sdist to PyPI through trusted publishing, attached to
    the GitHub Release) and `image.yml` (`ghcr.io/aryamanz29/mergeproof:X.Y.Z`, `:X.Y`, `:X`,
