@@ -80,7 +80,7 @@ jobs:
   gate:
     name: 🛡️ gate
     if: github.event_name == 'pull_request'
-    needs: [lint, unit, integration]
+    needs: [lint, unit, integration, docker]
     runs-on: ubuntu-latest
     permissions:
       contents: read
