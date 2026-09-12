@@ -55,4 +55,6 @@ rules:
       - check: pr.labels
         name: title follows Conventional Commits
         with: { any_of: ["changelog-not-needed"] }
-        instructions: Rename the PR to `type(scope): summary` (feat, fix, docs, ci, test, refactor, chore), or add the `changelog-not-needed` label.
+        instructions: >
+          Rename the PR to `type(scope): summary` (feat, fix, docs, ci, test, refactor, chore),
+          or add the `changelog-not-needed` label.
