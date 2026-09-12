@@ -27,6 +27,14 @@ class TestTestsChanged:
         assert out.status == Status.FAIL
         assert out.data["missing"] == {"src/api/users.py": "tests/**/test_users*.py"}
 
+    def test_missing_tests_are_annotated_on_the_source_file(self):
+        ctx = make_context(files=["src/api/users.py"])
+        out = run_check(TestsChanged(), ctx, map=MAP)
+        assert [a.path for a in out.annotations] == ["src/api/users.py"]
+        assert out.annotations[0].line == 1 and "tests/**/test_users*.py" in out.annotations[0].message
+        covered = make_context(files=["src/api/users.py", "tests/test_users.py"])
+        assert run_check(TestsChanged(), covered, map=MAP).annotations == []
+
     def test_pass_skip_and_ignore(self):
         ctx = make_context(files=["src/api/users.py", "tests/unit/api/test_users_extra.py"])
         assert run_check(TestsChanged(), ctx, map=MAP).status == Status.PASS
