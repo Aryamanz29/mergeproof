@@ -1,0 +1,27 @@
+name: CI
+on:
+  push: { branches: [main] }
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: { python: ["3.11", "3.12", "3.13"] }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - run: uv python install ${{ matrix.python }}
+      - run: uv sync --extra dev --python ${{ matrix.python }}
+      - run: uv run ruff check .
+      - run: uv run pytest --cov=mergeproof --cov-report=term-missing
+  dogfood:
+    # mergeproof gating its own PRs
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions: { contents: read, pull-requests: write, checks: read }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          version: "."
+          pending-ok: "true"

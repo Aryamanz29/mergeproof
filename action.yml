@@ -1,0 +1,47 @@
+name: "mergeproof"
+description: "Evidence gate for pull requests: enforce that changes ship with tests, traces, and human verification."
+branding:
+  icon: shield
+  color: purple
+inputs:
+  policy:
+    description: "Path to the policy file"
+    default: "mergeproof.yaml"
+  version:
+    description: "mergeproof version to install (PyPI spec), or a local path / git URL"
+    default: "mergeproof"
+  comment:
+    description: "Upsert the sticky PR comment"
+    default: "true"
+  pending-ok:
+    description: "Exit 0 while evidence is still pending (default: fail the check until evidence arrives)"
+    default: "false"
+  github-token:
+    description: "Token with pull-requests:write, checks:read"
+    default: ${{ github.token }}
+outputs:
+  verdict:
+    description: "pass | warn | pending | fail"
+    value: ${{ steps.run.outputs.verdict }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - shell: bash
+      run: python -m pip install --quiet "${{ inputs.version }}"
+    - id: run
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        args=(check --github --policy "${{ inputs.policy }}" --json mergeproof-report.json)
+        [ "${{ inputs.comment }}" = "true" ] && args+=(--comment)
+        [ "${{ inputs.pending-ok }}" = "true" ] && args+=(--pending-ok)
+        mergeproof "${args[@]}"
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: mergeproof-report
+        path: mergeproof-report.json
