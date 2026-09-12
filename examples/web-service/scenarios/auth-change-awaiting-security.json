@@ -1,0 +1,39 @@
+{
+  "expected": "pending",
+  "context": {
+    "source": "github",
+    "online": true,
+    "repo": "example/web",
+    "number": 12,
+    "title": "fix: rotate session cookie on login",
+    "author": "dev",
+    "labels": [
+      "security-reviewed"
+    ],
+    "base_ref": "main",
+    "head_sha": "5555555aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "base_sha": "0000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "body": "## Summary\nRotate the cookie.\n",
+    "files": [
+      {
+        "path": "api/auth/session.py",
+        "status": "added"
+      },
+      {
+        "path": "tests/test_session.py",
+        "status": "added"
+      }
+    ],
+    "comments": [
+      {
+        "author": "dev",
+        "body": "/security-ok 5555555"
+      },
+      {
+        "author": "sec-lead",
+        "body": "looks right, /security-ok 4444444"
+      }
+    ],
+    "check_runs": []
+  }
+}

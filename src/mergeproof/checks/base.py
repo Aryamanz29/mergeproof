@@ -1,5 +1,10 @@
-"""Base class every check implements. Third parties subclass this and register via the
-``mergeproof.checks`` entry-point group (see pyproject.toml)."""
+"""Base class for checks.
+
+A check answers one question about a pull request. It declares its
+parameters as a pydantic model, runs against a :class:`Context`, and returns
+an :class:`Outcome`. Third-party checks register under the
+``mergeproof.checks`` entry-point group.
+"""
 
 from __future__ import annotations
 
@@ -8,14 +13,14 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict
 
-from ..context import PRContext
-from ..models import CheckResult, Status
+from mergeproof.context import Context
+from mergeproof.report import Outcome, Status
 
 
 class Check(ABC):
     id: ClassVar[str]
     description: ClassVar[str] = ""
-    needs_github: ClassVar[bool] = False  # if True, reports PENDING in local mode
+    needs_github: ClassVar[bool] = False
 
     class Params(BaseModel):
         model_config = ConfigDict(extra="forbid")
@@ -24,40 +29,37 @@ class Check(ABC):
         return self.Params(**raw)
 
     @abstractmethod
-    def run(self, ctx: PRContext, params: Any, files: list[str]) -> CheckResult:
-        """``files`` are the changed paths that made the enclosing rule match."""
+    def run(self, ctx: Context, params: Any, files: list[str]) -> Outcome:
+        """*files* are the changed paths that made the enclosing rule apply."""
 
     def explain(self, params: Any) -> str:
-        """One or two sentences telling a human or agent what satisfies this check."""
+        """One sentence a contributor or agent can act on."""
         return self.description
 
     def evidence_template(self, params: Any) -> dict[str, Any]:
-        """Keys this check expects in the PR's evidence block, if any."""
+        """Keys this check expects in the evidence block, with placeholder values."""
         return {}
 
 
-# Small constructors so checks read declaratively -------------------------------------
+def ok(summary: str, **kw: Any) -> Outcome:
+    return Outcome(status=Status.PASS, summary=summary, **kw)
 
 
-def passed(summary: str, **kw: Any) -> CheckResult:
-    return CheckResult(status=Status.PASS, summary=summary, **kw)
+def fail(summary: str, fix: str | None = None, **kw: Any) -> Outcome:
+    return Outcome(status=Status.FAIL, summary=summary, fix=fix, **kw)
 
 
-def failed(summary: str, fix: str | None = None, **kw: Any) -> CheckResult:
-    return CheckResult(status=Status.FAIL, summary=summary, fix=fix, **kw)
+def warn(summary: str, fix: str | None = None, **kw: Any) -> Outcome:
+    return Outcome(status=Status.WARN, summary=summary, fix=fix, **kw)
 
 
-def pending(summary: str, fix: str | None = None, **kw: Any) -> CheckResult:
-    return CheckResult(status=Status.PENDING, summary=summary, fix=fix, **kw)
+def pending(summary: str, fix: str | None = None, **kw: Any) -> Outcome:
+    return Outcome(status=Status.PENDING, summary=summary, fix=fix, **kw)
 
 
-def warned(summary: str, fix: str | None = None, **kw: Any) -> CheckResult:
-    return CheckResult(status=Status.WARN, summary=summary, fix=fix, **kw)
+def skip(summary: str, **kw: Any) -> Outcome:
+    return Outcome(status=Status.SKIP, summary=summary, **kw)
 
 
-def skipped(summary: str, **kw: Any) -> CheckResult:
-    return CheckResult(status=Status.SKIP, summary=summary, **kw)
-
-
-def errored(summary: str, **kw: Any) -> CheckResult:
-    return CheckResult(status=Status.ERROR, summary=summary, **kw)
+def error(summary: str, **kw: Any) -> Outcome:
+    return Outcome(status=Status.ERROR, summary=summary, **kw)

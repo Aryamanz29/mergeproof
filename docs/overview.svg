@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="330" viewBox="0 0 860 330" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="14">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#6b7280"/>
+    </marker>
+  </defs>
+  <rect width="860" height="330" fill="#ffffff"/>
+
+  <rect x="40" y="105" width="230" height="120" rx="10" fill="#f3f0ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="155" y="135" text-anchor="middle" font-weight="600" fill="#4c1d95">mergeproof.yaml</text>
+  <text x="155" y="160" text-anchor="middle" fill="#374151">"when a change touches X,</text>
+  <text x="155" y="180" text-anchor="middle" fill="#374151">it must prove Y"</text>
+  <text x="155" y="205" text-anchor="middle" fill="#6b7280" font-size="12">one file, checked into the repo</text>
+
+  <line x1="270" y1="140" x2="410" y2="70" stroke="#6b7280" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="270" y1="165" x2="410" y2="165" stroke="#6b7280" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="270" y1="190" x2="410" y2="260" stroke="#6b7280" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="415" y="35" width="405" height="70" rx="10" fill="#f9fafb" stroke="#d1d5db"/>
+  <text x="435" y="60" font-weight="600" fill="#111827">CI</text>
+  <text x="435" y="82" fill="#374151" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">mergeproof check --github --comment</text>
+  <text x="720" y="60" fill="#6b7280" font-size="12">enforces, posts one</text>
+  <text x="720" y="76" fill="#6b7280" font-size="12">sticky PR comment</text>
+
+  <rect x="415" y="130" width="405" height="70" rx="10" fill="#f9fafb" stroke="#d1d5db"/>
+  <text x="435" y="155" font-weight="600" fill="#111827">Coding agents and contributors</text>
+  <text x="435" y="177" fill="#374151" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">mergeproof explain   ·   mergeproof mcp</text>
+  <text x="720" y="155" fill="#6b7280" font-size="12">learn what to prove</text>
+  <text x="720" y="171" fill="#6b7280" font-size="12">before pushing</text>
+
+  <rect x="415" y="225" width="405" height="70" rx="10" fill="#f9fafb" stroke="#d1d5db"/>
+  <text x="435" y="250" font-weight="600" fill="#111827">Reviewers</text>
+  <text x="435" y="272" fill="#374151" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">/verified &lt;sha7&gt;</text>
+  <text x="720" y="250" fill="#6b7280" font-size="12">the one thing an</text>
+  <text x="720" y="266" fill="#6b7280" font-size="12">agent cannot fake</text>
+</svg>

@@ -1,81 +1,68 @@
-"""tests.changed - every touched source file must come with a touched test file."""
+"""Changed source files must come with changed test files."""
 
 from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .. import patterns
-from ..context import PRContext
-from ..models import CheckResult
-from .base import Check, failed, passed, skipped
+from mergeproof import patterns
+from mergeproof.checks.base import Check, fail, ok, skip
+from mergeproof.context import Context
+from mergeproof.report import Outcome
 
 
 class TestsChanged(Check):
     id = "tests.changed"
-    description = (
-        "Changed source files must be accompanied by changed (added or modified) test files. "
-        "`map` pairs a source glob with `{capture}` segments to a test glob template; "
-        "`any_of` alternatively accepts *any* changed file matching those globs."
-    )
+    description = "Changed source files are accompanied by added or modified test files."
 
     class Params(BaseModel):
         model_config = ConfigDict(extra="forbid")
+
         map: dict[str, str] = Field(
             default_factory=dict,
-            description='e.g. {"src/tools/{name}.py": "tests/**/test_{name}*.py"}',
+            description="Source glob with {captures} mapped to a test glob, e.g. src/{name}.py to tests/test_{name}.py",
         )
         any_of: list[str] = Field(
             default_factory=list,
-            description="Pass if any changed file matches one of these globs (used when `map` is empty "
-            "or as a fallback when `mode` is 'any')",
+            description="Pass when any changed file matches one of these globs; used when `map` is empty",
         )
-        mode: str = Field(default="each", pattern="^(each|any)$")
-        ignore: list[str] = Field(default_factory=list, description="Source globs exempt from the rule")
+        ignore: list[str] = Field(default_factory=list, description="Source globs exempt from `map`")
 
-    def run(self, ctx: PRContext, params: Params, files: list[str]) -> CheckResult:
+    def run(self, ctx: Context, params: Params, files: list[str]) -> Outcome:
         changed = ctx.changed_paths
-        if params.mode == "any" or not params.map:
-            globs = params.any_of or list(params.map.values())
-            hits = [p for p in changed if patterns.any_match(globs, p)]
+        if not params.map:
+            hits = [p for p in changed if patterns.matches_any(params.any_of, p)]
             if hits:
-                return passed(f"{len(hits)} test file(s) changed", details=hits[:10])
-            return failed(
-                "no test files changed",
-                fix="Add or update tests matching: " + ", ".join(globs),
-            )
+                return ok(f"{len(hits)} test file(s) changed", details=hits[:10])
+            return fail("no test files changed", fix="Add or update tests matching " + ", ".join(params.any_of))
 
         missing: dict[str, str] = {}
         covered: list[str] = []
-        considered = 0
-        for src in files:
-            if patterns.any_match(params.ignore, src):
+        for source in files:
+            if patterns.matches_any(params.ignore, source):
                 continue
-            for src_glob, test_tmpl in params.map.items():
-                m = patterns.match(src_glob, src)
-                if not m:
+            for source_glob, test_template in params.map.items():
+                m = patterns.match(source_glob, source)
+                if m is None:
                     continue
-                considered += 1
-                test_glob = patterns.expand(test_tmpl, m.groupdict())
+                test_glob = patterns.expand(test_template, m.groupdict())
                 if any(patterns.match(test_glob, p) for p in changed):
-                    covered.append(src)
+                    covered.append(source)
                 else:
-                    missing[src] = test_glob
+                    missing[source] = test_glob
                 break
-        if considered == 0:
-            return skipped("no mapped source files in this change")
+        if not missing and not covered:
+            return skip("no mapped source files in this change")
         if missing:
-            return failed(
+            return fail(
                 f"{len(missing)} changed source file(s) without test changes",
-                details=[f"`{s}` → expected a changed test matching `{g}`" for s, g in missing.items()],
-                fix="Add or update the unit tests for each listed file (a regression test that fails "
-                "before the fix and passes after it).",
+                details=[f"{src}: expected a changed test matching {glob}" for src, glob in missing.items()],
+                fix="Add a regression test for each listed file: it should fail before the change and pass after.",
                 data={"missing": missing},
             )
-        return passed(f"tests changed for all {len(covered)} mapped source file(s)", details=covered[:10])
+        return ok(f"tests changed for all {len(covered)} mapped source file(s)", details=covered[:10])
 
     def explain(self, params: Params) -> str:
-        if params.map and params.mode == "each":
-            pairs = "; ".join(f"`{k}` → `{v}`" for k, v in params.map.items())
+        if params.map:
+            pairs = "; ".join(f"`{src}` needs `{test}`" for src, test in params.map.items())
             return f"Each changed source file needs a changed test file: {pairs}."
-        globs = params.any_of or list(params.map.values())
-        return "At least one changed test file matching: " + ", ".join(f"`{g}`" for g in globs)
+        return "At least one changed test file matching " + ", ".join(f"`{g}`" for g in params.any_of) + "."

@@ -1,15 +1,57 @@
-# mergeproof gating itself.
+# This repository gates itself.
 version: 1
 project: mergeproof
+
 rules:
-  - id: checks-need-tests
-    description: A new or changed built-in check ships with tests.
-    when: { paths: ["src/mergeproof/checks/*.py"], exclude_paths: ["**/__init__.py", "**/base.py", "**/registry.py"] }
+  - id: source-needs-tests
+    description: A change to a module ships with a change to its tests.
+    when:
+      paths: ["src/mergeproof/**/*.py"]
+      exclude_paths: ["src/mergeproof/__init__.py", "src/mergeproof/__main__.py", "src/mergeproof/mcp_server.py"]
     require:
       - check: tests.changed
-        with: { any_of: ["tests/test_checks.py", "tests/test_*.py"] }
-  - id: unit-tests-green
-    when: { paths: ["src/**", "tests/**", "pyproject.toml"] }
-    require:
+        name: unit tests touched
+        with:
+          map:
+            "src/mergeproof/checks/{name}.py": "tests/unit/test_checks.py"
+            "src/mergeproof/providers/{name}.py": "tests/unit/test_providers.py"
+            "src/mergeproof/verifiers/{name}.py": "tests/unit/test_verifiers.py"
+            "src/mergeproof/render/{name}.py": "tests/unit/test_render.py"
+            "src/mergeproof/{name}.py": "tests/unit/test_{name}*.py"
+          ignore: ["src/mergeproof/checks/__init__.py", "src/mergeproof/checks/base.py", "src/mergeproof/checks/registry.py",
+                   "src/mergeproof/verifiers/__init__.py", "src/mergeproof/verifiers/base.py", "src/mergeproof/render/__init__.py",
+                   "src/mergeproof/providers/__init__.py", "src/mergeproof/report.py", "src/mergeproof/context.py"]
       - check: ci.job_passed
-        with: { name: "test \\(3\\.12\\)", regex: true }
+        name: unit tests green on every Python
+        with: { name: "^unit \\(3\\.1[123]\\)$", regex: true, min_matches: 3 }
+      - check: ci.job_passed
+        name: integration green
+        with: { name: "^integration$", regex: true }
+
+  - id: mcp-server-has-integration-test
+    description: The MCP server is only tested end to end, so a change there touches that test.
+    when:
+      paths: ["src/mergeproof/mcp_server.py"]
+    require:
+      - check: tests.changed
+        with: { any_of: ["tests/integration/test_mcp.py"] }
+
+  - id: examples-stay-runnable
+    description: A changed example policy keeps or updates its scenarios.
+    when:
+      paths: ["examples/*/mergeproof.yaml"]
+    require:
+      - check: files.changed
+        name: scenarios touched
+        severity: warn
+        with: { any_of: ["examples/*/scenarios/*.json"] }
+
+  - id: changelog
+    description: User-visible changes are recorded.
+    severity: warn
+    when:
+      paths: ["src/**", "action.yml"]
+    require:
+      - check: files.changed
+        with: { all_of: ["CHANGELOG.md"] }
+        instructions: Add a line under Unreleased in CHANGELOG.md.

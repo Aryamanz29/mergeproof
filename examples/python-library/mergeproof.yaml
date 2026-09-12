@@ -1,0 +1,32 @@
+# A library published to a package index. Every source change is tested,
+# every user-visible change is in the changelog, and CI must be green.
+version: 1
+project: example-library
+
+rules:
+  - id: source-needs-tests
+    description: Source changes come with tests for the touched module.
+    when:
+      paths: ["src/**/*.py"]
+      exclude_paths: ["src/**/__init__.py", "src/**/_version.py"]
+    require:
+      - check: tests.changed
+        name: tests for touched modules
+        with:
+          map:
+            "src/{pkg}/{name}.py": "tests/**/test_{name}*.py"
+      - check: ci.job_passed
+        name: unit tests green
+        with: { name: "^unit", regex: true }
+
+  - id: changelog
+    description: User-visible changes are recorded in the changelog.
+    severity: warn
+    when:
+      paths: ["src/**"]
+      exclude_paths: ["src/**/_version.py"]
+    require:
+      - check: files.changed
+        name: changelog updated
+        with: { all_of: ["CHANGELOG.md"] }
+        instructions: Add a line under the Unreleased heading, or label the PR `skip-changelog`.

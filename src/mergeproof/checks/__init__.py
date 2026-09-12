@@ -1,4 +1,4 @@
-from .base import Check
-from .registry import Registry, default_registry
+from mergeproof.checks.base import Check
+from mergeproof.checks.registry import Registry, load_registry
 
-__all__ = ["Check", "Registry", "default_registry"]
+__all__ = ["Check", "Registry", "load_registry"]

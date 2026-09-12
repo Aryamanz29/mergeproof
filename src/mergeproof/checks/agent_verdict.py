@@ -1,17 +1,16 @@
-"""agent.verdict - a structured verdict posted by an automated reviewer (LLM agent) on the PR.
+"""A structured verdict posted by an automated reviewer.
 
-Non-deterministic reviewers (GitHub Copilot agents, Claude Code Action, an in-house review agent)
-are welcome, but they are *witnesses*, not the gate. They post a fenced ``verdict`` block; this
-check reads it, binds it to the head sha, restricts who may post it, and turns it into an
-ordinary pass/fail/pending requirement next to the deterministic ones::
+LLM reviewers are welcome as witnesses, not as the gate. They post a fenced
+``verdict`` block; this check reads it, restricts who may post it, binds it
+to the head commit, and turns it into an ordinary requirement next to the
+deterministic ones::
 
-    <!-- mergeproof-verdict -->
     ```verdict
     check: trace-review
-    verdict: pass          # pass | fail
+    verdict: pass
     head: b3ca7be
     confidence: 0.9
-    summary: after-trace shows auto_corrections populated; before-trace shows none.
+    summary: the after-run shows the corrected output; the before-run does not.
     ```
 """
 
@@ -21,75 +20,69 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..context import PRContext
-from ..evidence import parse_evidence
-from ..models import CheckResult
-from .base import Check, failed, passed, pending
+from mergeproof import evidence
+from mergeproof.checks.base import Check, fail, ok, pending
+from mergeproof.context import Context
+from mergeproof.report import Outcome
 
 
 class AgentVerdict(Check):
     id = "agent.verdict"
-    description = (
-        "A structured `verdict` block posted on the PR by an allowed automated reviewer for the given check name."
-    )
+    description = "An allowed automated reviewer posted a verdict block for the named check."
     needs_github = True
 
     class Params(BaseModel):
         model_config = ConfigDict(extra="forbid")
-        name: str = Field(description="Value of `check:` inside the verdict block, e.g. trace-review")
+
+        name: str = Field(description="Value of `check:` inside the verdict block")
         authors: list[str] = Field(
-            default_factory=list, description="Logins allowed to post it (e.g. github-actions[bot])"
+            default_factory=list, description="Logins allowed to post it, e.g. github-actions[bot]"
         )
         bind_to_head: bool = True
         min_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
         block: str = "verdict"
-        stale: str = Field(
-            default="pending", pattern="^(pending|fail)$", description="Status when only older verdicts exist"
-        )
 
-    def run(self, ctx: PRContext, params: Params, files: list[str]) -> CheckResult:
+    def run(self, ctx: Context, params: Params, files: list[str]) -> Outcome:
         if not ctx.online:
-            return pending(f"agent verdict `{params.name}` is only visible in GitHub mode")
+            return pending(f"the `{params.name}` verdict is only visible in GitHub mode")
         latest: dict[str, Any] | None = None
         latest_at = ""
         rejected: list[str] = []
-        for c in ctx.comments():
-            ev = parse_evidence(c.body, params.block)
-            if not ev.found or ev.get("check") != params.name:
+        for comment in ctx.comments:
+            block = evidence.parse(comment.body, params.block)
+            if not block.found or block.get("check") != params.name:
                 continue
-            if params.authors and c.author not in params.authors:
-                rejected.append(f"{c.author}: not an allowed verdict author")
+            if params.authors and comment.author not in params.authors:
+                rejected.append(f"{comment.author}: not an allowed verdict author")
                 continue
-            if params.bind_to_head and ctx.head_short and str(ev.get("head", ""))[:7] != ctx.head_short:
-                rejected.append(f"{c.author}: verdict is for `{ev.get('head')}`, head is `{ctx.head_short}`")
+            head = str(block.get("head", ""))[:7]
+            if params.bind_to_head and ctx.head_short and head != ctx.head_short:
+                rejected.append(
+                    f"{comment.author}: verdict is for {head or 'an unknown commit'}, head is {ctx.head_short}"
+                )
                 continue
-            if c.created_at >= latest_at:
-                latest, latest_at = ev.data, c.created_at
+            if comment.created_at >= latest_at:
+                latest, latest_at = block.data, comment.created_at
         if latest is None:
-            msg = f"no `{params.name}` verdict for {ctx.head_short or 'this head'}"
-            return (
-                failed(msg, details=rejected) if params.stale == "fail" and rejected else pending(msg, details=rejected)
-            )
+            return pending(f"no `{params.name}` verdict for {ctx.head_short or 'this commit'}", details=rejected)
         verdict = str(latest.get("verdict", "")).lower()
-        conf = float(latest.get("confidence", 1.0) or 0.0)
+        confidence = float(latest.get("confidence") or 1.0)
         summary = str(latest.get("summary", "")).strip()
         if verdict != "pass":
-            return failed(
-                f"agent verdict: {verdict or 'missing'} — {summary}",
-                data=latest,
-                fix="Address the reviewer's findings and push; the agent re-runs.",
+            return fail(
+                f"verdict {verdict or 'missing'}: {summary}", data=latest, fix="Address the findings and push again."
             )
-        if conf < params.min_confidence:
+        if confidence < params.min_confidence:
             return pending(
-                f"agent passed with confidence {conf:.2f} < {params.min_confidence:.2f} — {summary}", data=latest
+                f"passed with confidence {confidence:.2f}, below {params.min_confidence:.2f}: {summary}", data=latest
             )
-        return passed(f"agent verdict: pass ({conf:.2f}) — {summary}", data=latest)
+        return ok(f"verdict pass ({confidence:.2f}): {summary}", data=latest)
 
     def explain(self, params: Params) -> str:
         who = ", ".join(f"`{a}`" for a in params.authors) or "an automated reviewer"
-        return (
-            f"{who} posts a ```{params.block} block with `check: {params.name}`, `verdict: pass`"
-            + (", `head: <sha7>`" if params.bind_to_head else "")
-            + (f", confidence ≥ {params.min_confidence}" if params.min_confidence else "")
-            + "."
-        )
+        text = f"{who} posts a ```{params.block} block with `check: {params.name}` and `verdict: pass`"
+        if params.bind_to_head:
+            text += " for the current head sha"
+        if params.min_confidence:
+            text += f" with confidence of at least {params.min_confidence}"
+        return text + "."

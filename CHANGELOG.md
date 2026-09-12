@@ -1,0 +1,24 @@
+# Changelog
+
+All notable changes to this project are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## [Unreleased]
+
+## [0.2.0] - 2026-09-12
+
+### Added
+- Plumbing commands `context`, `report`, `comment` and `template`; contexts and reports are JSON and pipe between them.
+- `mergeproof mcp`: an MCP server (stdio) exposing explain, check, evidence_block, validate_policy, list_checks and agent_instructions.
+- `evidence.links`: vendor-neutral before/after link pairs with pluggable verifiers (`mergeproof.verifiers` entry-point group); `http` verifier built in.
+- `files.changed` check.
+- Example projects with scenario fixtures that the integration suite executes, and a `mergeproof-langfuse` verifier plugin.
+- Fixed exit codes: 0 pass or warn, 1 fail, 2 pending, 3 usage or policy error.
+
+### Removed
+- Braintrust-specific trace check (`evidence.traces`). Use `evidence.links` with a verifier plugin.
+
+## [0.1.0] - 2026-09-12
+
+### Added
+- First cut: policy file, built-in checks, `check` / `explain` / `agent-prompt`, composite GitHub Action.

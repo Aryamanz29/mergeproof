@@ -1,0 +1,47 @@
+# A web service with a database and a UI. Different parts of the tree need different proof.
+version: 1
+project: example-web-service
+
+rules:
+  - id: migrations-are-reversible
+    description: Every migration ships with a rollback and the PR says how to run it.
+    when:
+      paths: ["db/migrations/**"]
+    require:
+      - check: files.changed
+        name: down migration present
+        with: { any_of: ["db/migrations/**/*.down.sql", "db/migrations/**/down/**"] }
+      - check: pr.body
+        name: rollback section
+        with: { sections: ["Rollback"] }
+      - check: evidence.field
+        name: migration rehearsed
+        with: { key: migration.rehearsed_on, one_of: ["staging", "preprod"] }
+
+  - id: ui-change-shows-itself
+    description: UI changes come with before/after screenshots and a preview deployment.
+    when:
+      paths: ["web/src/**"]
+      exclude_paths: ["web/src/**/*.test.*"]
+    require:
+      - check: evidence.field
+        name: preview url
+        with: { key: preview, matches: "^https://" , example: "https://pr-<n>.preview.example.com" }
+      - check: evidence.links
+        name: before/after screenshots
+        with: { key: screenshots, min_pairs: 1, example: "https://<bucket>/<file>.png" }
+      - check: ci.job_passed
+        name: e2e green
+        with: { name: "^e2e", regex: true }
+
+  - id: sensitive-paths-need-security-review
+    description: Auth, payments and CI configuration are reviewed by the security group.
+    when:
+      paths: ["api/auth/**", "api/payments/**", ".github/workflows/**"]
+    require:
+      - check: pr.labels
+        name: security label
+        with: { any_of: ["security-reviewed"] }
+      - check: review.human_verified
+        name: security sign-off
+        with: { phrase: "/security-ok", allowed_users: ["sec-lead", "sec-oncall"], bind_to_head: true }

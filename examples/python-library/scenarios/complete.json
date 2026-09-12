@@ -1,0 +1,18 @@
+{
+  "expected": "pass",
+  "context": {
+    "source": "github", "online": true, "repo": "example/library", "number": 43,
+    "title": "fix: parse handles empty input", "author": "dev", "labels": [],
+    "base_ref": "main", "head_sha": "3333333aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "base_sha": "0000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "body": "Fixes #40.",
+    "files": [
+      {"path": "src/lib/parse.py", "status": "modified"},
+      {"path": "tests/unit/test_parse.py", "status": "modified"},
+      {"path": "CHANGELOG.md", "status": "modified"}
+    ],
+    "check_runs": [
+      {"name": "unit (3.12)", "status": "completed", "conclusion": "success"},
+      {"name": "unit (3.13)", "status": "completed", "conclusion": "success"}
+    ]
+  }
+}

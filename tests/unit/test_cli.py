@@ -1,0 +1,124 @@
+import io
+import json
+import subprocess
+import sys
+
+import pytest
+
+from mergeproof.cli import main
+
+POLICY = """\
+rules:
+  - id: src
+    when: { paths: ["src/**"] }
+    require:
+      - check: tests.changed
+        with: { any_of: ["tests/**"] }
+      - check: evidence.field
+        with: { key: environment, equals: staging }
+"""
+
+
+def sh(cwd, *args):
+    subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
+
+
+@pytest.fixture
+def repo(tmp_path):
+    sh(tmp_path, "init", "-q", "-b", "main")
+    sh(tmp_path, "config", "user.email", "t@example.com")
+    sh(tmp_path, "config", "user.name", "t")
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "a.py").write_text("x = 1\n")
+    sh(tmp_path, "add", ".")
+    sh(tmp_path, "commit", "-qm", "init")
+    sh(tmp_path, "checkout", "-qb", "feature")
+    (tmp_path / "src" / "a.py").write_text("x = 2\n")
+    sh(tmp_path, "commit", "-qam", "fix: bump")
+    (tmp_path / "mergeproof.yaml").write_text(POLICY)
+    return tmp_path
+
+
+def run(*argv):
+    with pytest.raises(SystemExit) as exc:
+        main([str(a) for a in argv])
+    return exc.value.code
+
+
+def test_check_exit_codes_and_outputs(repo, capsys):
+    policy = repo / "mergeproof.yaml"
+    code = run("check", "--local", "--base", "main", "--root", repo, "-p", policy, "-o", repo / "r.json")
+    assert code == 1
+    out = capsys.readouterr().out
+    assert out.startswith("mergeproof: FAIL") and "```evidence" in out
+    report = json.loads((repo / "r.json").read_text())
+    assert report["source"] == "local" and report["rules"][0]["files"] == ["src/a.py"]
+
+    (repo / "tests").mkdir()
+    (repo / "tests" / "test_a.py").write_text("def test(): pass\n")
+    (repo / "body.md").write_text("```evidence\nenvironment: staging\n```\n")
+    code = run(
+        "check", "--local", "--base", "main", "--root", repo, "-p", policy, "--body-file", repo / "body.md", "-f", "md"
+    )
+    assert code == 0
+    assert "all evidence present" in capsys.readouterr().out
+
+
+def test_plumbing_round_trip(repo, capsys, monkeypatch):
+    policy = repo / "mergeproof.yaml"
+    assert run("context", "--local", "--base", "main", "--root", repo) == 0
+    context_json = capsys.readouterr().out
+    (repo / "ctx.json").write_text(context_json)
+    assert run("check", "--context", repo / "ctx.json", "-p", policy, "-f", "json") == 1
+    (repo / "report.json").write_text(capsys.readouterr().out)
+    assert run("report", repo / "report.json", "-f", "md") == 0
+    assert "evidence missing" in capsys.readouterr().out
+    assert run("report", repo / "report.json", "--exit-status") == 1
+    monkeypatch.setattr(sys, "stdin", io.StringIO((repo / "report.json").read_text()))
+    assert run("report", "-", "-f", "text") == 0
+    assert "FAIL" in capsys.readouterr().out
+
+
+def test_explain_template_and_helpers(repo, capsys, tmp_path):
+    policy = repo / "mergeproof.yaml"
+    assert run("explain", "--local", "--base", "main", "--root", repo, "-p", policy) == 0
+    assert "What this change must prove" in capsys.readouterr().out
+    assert run("explain", "--local", "--base", "main", "--root", repo, "-p", policy, "-f", "text") == 0
+    capsys.readouterr()
+    assert run("template", "--local", "--base", "main", "--root", repo, "-p", policy) == 0
+    assert "environment: staging" in capsys.readouterr().out
+    assert run("validate", "-p", policy) == 0
+    fresh = tmp_path / "new.yaml"
+    assert run("init", "-p", fresh) == 0
+    assert run("init", "-p", fresh) == 3
+    assert run("validate", "-p", fresh) == 0
+    assert run("agent-prompt", "-p", fresh) == 0
+    assert "Evidence requirements" in capsys.readouterr().out
+    assert run("checks") == 0
+    listing = capsys.readouterr().out
+    assert "review.human_verified" in listing and "PydanticUndefined" not in listing
+
+
+def test_usage_errors_exit_3(repo, capsys, tmp_path, tmp_path_factory):
+    assert run("validate", "-p", tmp_path / "missing.yaml") == 3
+    bad = tmp_path / "bad.yaml"
+    bad.write_text("rules:\n  - id: a\n    require: [{check: nope}]\n")
+    assert run("validate", "-p", bad) == 3
+    assert "unknown check" in capsys.readouterr().err
+    empty = tmp_path_factory.mktemp("not-a-repo")
+    assert run("check", "--local", "--base", "main", "--root", empty, "-p", repo / "mergeproof.yaml") == 3
+    (tmp_path / "ctx.json").write_text("{not json")
+    assert run("check", "--context", tmp_path / "ctx.json", "-p", repo / "mergeproof.yaml") == 3
+    assert run("report", tmp_path / "absent.json") == 3
+
+
+def test_comment_without_github_context_is_skipped(repo, capsys):
+    policy = repo / "mergeproof.yaml"
+    code = run("check", "--local", "--base", "main", "--root", repo, "-p", policy, "--comment", "-q")
+    assert code == 1
+    assert "needs a GitHub context" in capsys.readouterr().err
+
+
+def test_module_entry_point():
+    proc = subprocess.run([sys.executable, "-m", "mergeproof", "--version"], capture_output=True, text=True)
+    assert proc.returncode == 0 and proc.stdout.startswith("mergeproof ")

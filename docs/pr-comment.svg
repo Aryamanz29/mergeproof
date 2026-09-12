@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="400" viewBox="0 0 820 400" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="14">
+  <rect width="820" height="400" fill="#ffffff"/>
+  <rect x="10" y="10" width="800" height="380" rx="8" fill="#ffffff" stroke="#d0d7de"/>
+  <rect x="10" y="10" width="800" height="40" rx="8" fill="#f6f8fa" stroke="#d0d7de"/>
+  <circle cx="34" cy="30" r="10" fill="#7c3aed"/>
+  <text x="52" y="35" font-weight="600" fill="#1f2328">github-actions</text>
+  <text x="160" y="35" fill="#656d76">bot · commented 2 minutes ago</text>
+
+  <text x="30" y="80" font-size="18" font-weight="600" fill="#1f2328">⏳ mergeproof: waiting for evidence  <tspan font-size="12" fill="#656d76" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">4444444</tspan></text>
+
+  <g font-size="13">
+    <line x1="30" y1="100" x2="790" y2="100" stroke="#d0d7de"/>
+    <text x="40" y="120" font-weight="600" fill="#1f2328">Rule</text>
+    <text x="270" y="120" font-weight="600" fill="#1f2328">Requirement</text>
+    <text x="470" y="120" font-weight="600" fill="#1f2328"> </text>
+    <text x="510" y="120" font-weight="600" fill="#1f2328">Detail</text>
+    <line x1="30" y1="130" x2="790" y2="130" stroke="#d0d7de"/>
+
+    <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#1f2328">
+      <text x="40" y="152">tool-change-needs-unit-tests</text>
+      <text x="40" y="178">tool-change-needs-unit-tests</text>
+      <text x="40" y="204">fix-needs-live-evidence</text>
+      <text x="40" y="230">fix-needs-live-evidence</text>
+      <text x="40" y="256">fix-needs-live-evidence</text>
+      <text x="40" y="282">automated-review</text>
+    </g>
+    <g fill="#1f2328">
+      <text x="270" y="152">unit tests for touched tools</text>
+      <text x="270" y="178">unit tests green</text>
+      <text x="270" y="204">tested on staging</text>
+      <text x="270" y="230">before/after traces</text>
+      <text x="270" y="256">reviewer opened the traces</text>
+      <text x="270" y="282">review agent verdict</text>
+    </g>
+    <g text-anchor="middle">
+      <text x="480" y="152">✅</text><text x="480" y="178">✅</text><text x="480" y="204">✅</text>
+      <text x="480" y="230">✅</text><text x="480" y="256">⏳</text><text x="480" y="282">✅</text>
+    </g>
+    <g fill="#656d76">
+      <text x="510" y="152">tests changed for all 1 mapped source file(s)</text>
+      <text x="510" y="178">1 run(s) succeeded</text>
+      <text x="510" y="204">`environment` = staging</text>
+      <text x="510" y="230">1 before/after pair(s), all verified</text>
+      <text x="510" y="256">waiting for a reviewer to post `/verified 4444444`</text>
+      <text x="510" y="282">verdict pass (0.85): input validation added</text>
+    </g>
+    <line x1="30" y1="298" x2="790" y2="298" stroke="#d0d7de"/>
+
+    <text x="30" y="326" font-weight="600" fill="#1f2328">Still needed</text>
+    <text x="30" y="348" fill="#1f2328"><tspan font-weight="600">reviewer opened the traces</tspan> (fix-needs-live-evidence): waiting for a reviewer to post `/verified 4444444`</text>
+    <text x="30" y="370" fill="#656d76">• Fix: After checking the evidence, a reviewer other than the author comments `/verified` followed by the 7-character head sha.</text>
+  </g>
+</svg>
