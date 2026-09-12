@@ -10,3 +10,4 @@ build/
 .coverage
 htmlcov/
 mergeproof-report.json
+uv.lock
