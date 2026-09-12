@@ -92,6 +92,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./
+        id: gate
         with:
           version: "."
           pending-ok: "true"
+      - name: Render the requirements as a test report
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always() && hashFiles('mergeproof-junit.xml') != ''
+        with:
+          check_name: mergeproof requirements
+          files: mergeproof-junit.xml
+          comment_mode: off
+          action_fail: false
+          action_fail_on_inconclusive: false
