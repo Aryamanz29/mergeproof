@@ -1,5 +1,5 @@
 name: mergeproof
-description: Evidence gate for pull requests. Enforces the repository's mergeproof.yaml and posts one sticky report.
+description: Evidence gate for pull requests. Enforces the mergeproof.yaml policy in the repository and reports on the PR.
 branding:
   icon: shield
   color: purple
