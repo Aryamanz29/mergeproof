@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). From 0.2.0 on, entries are generated
 by release-please from Conventional Commit messages.
 
+## [0.5.0](https://github.com/Aryamanz29/mergeproof/compare/v0.4.0...v0.5.0) (2026-09-12)
+
+
+### Added
+
+* **checks:** tests.changed existing_only ([2f35869](https://github.com/Aryamanz29/mergeproof/commit/2f35869a4e18d155af1cbea2688bacdae578e275))
+* **plugins:** Braintrust verifier plugin ([7080d6c](https://github.com/Aryamanz29/mergeproof/commit/7080d6c67b93187d3fbecfb5a9176eb7938684b1))
+* **plugins:** mergeproof-braintrust verifier and braintrust.traces check ([13bcfff](https://github.com/Aryamanz29/mergeproof/commit/13bcfff0c042b79a94cc339b58313ebf264c52cb))
+
 ## [0.4.0](https://github.com/Aryamanz29/mergeproof/compare/v0.3.0...v0.4.0) (2026-09-12)
 
 
