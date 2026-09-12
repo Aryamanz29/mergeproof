@@ -46,7 +46,7 @@ docker run --rm -v "$PWD":/repo ghcr.io/aryamanz29/mergeproof check --local
 docker run -i --rm -v "$PWD":/repo ghcr.io/aryamanz29/mergeproof mcp     # MCP over stdio, -i is required
 ```
 
-The image expects the repository mounted at `/repo`. For an MCP client, the same command goes in
+`:edge` tracks `main`; releases get `:X.Y.Z`, `:X.Y` and `:latest`. The image expects the repository mounted at `/repo`. For an MCP client, the same command goes in
 the settings file: `"command": "docker", "args": ["run", "-i", "--rm", "-v", "/path/to/repo:/repo", "ghcr.io/aryamanz29/mergeproof", "mcp"]`.
 
 ## Five-minute tour
