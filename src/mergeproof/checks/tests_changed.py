@@ -5,7 +5,7 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field
 
 from mergeproof import patterns
-from mergeproof.checks.base import Check, fail, ok, skip
+from mergeproof.checks.base import Check, fail, ok, plural, skip
 from mergeproof.context import Context
 from mergeproof.report import Annotation, Outcome
 
@@ -32,7 +32,7 @@ class TestsChanged(Check):
         if not params.map:
             hits = [p for p in changed if patterns.matches_any(params.any_of, p)]
             if hits:
-                return ok(f"{len(hits)} test file(s) changed", details=hits[:10])
+                return ok(f"{plural(len(hits), 'test file')} changed", details=hits[:10])
             return fail("no test files changed", fix="Add or update tests matching " + ", ".join(params.any_of))
 
         missing: dict[str, str] = {}
@@ -54,7 +54,7 @@ class TestsChanged(Check):
             return skip("no mapped source files in this change")
         if missing:
             return fail(
-                f"{len(missing)} changed source file(s) without test changes",
+                f"{plural(len(missing), 'changed source file')} without test changes",
                 details=[f"{src}: expected a changed test matching {glob}" for src, glob in missing.items()],
                 fix="Add a regression test for each listed file: it should fail before the change and pass after.",
                 data={"missing": missing},
@@ -63,7 +63,7 @@ class TestsChanged(Check):
                     for src, glob in missing.items()
                 ],
             )
-        return ok(f"tests changed for all {len(covered)} mapped source file(s)", details=covered[:10])
+        return ok(f"tests changed for all {plural(len(covered), 'mapped source file')}", details=covered[:10])
 
     def explain(self, params: Params) -> str:
         if params.map:

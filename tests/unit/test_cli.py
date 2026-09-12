@@ -61,7 +61,7 @@ def test_check_exit_codes_and_outputs(repo, capsys):
         "check", "--local", "--base", "main", "--root", repo, "-p", policy, "--body-file", repo / "body.md", "-f", "md"
     )
     assert code == 0
-    assert "all evidence present" in capsys.readouterr().out
+    assert "requirements are satisfied" in capsys.readouterr().out
 
 
 def test_plumbing_round_trip(repo, capsys, monkeypatch):
@@ -72,7 +72,7 @@ def test_plumbing_round_trip(repo, capsys, monkeypatch):
     assert run("check", "--context", repo / "ctx.json", "-p", policy, "-f", "json") == 1
     (repo / "report.json").write_text(capsys.readouterr().out)
     assert run("report", repo / "report.json", "-f", "md") == 0
-    assert "evidence missing" in capsys.readouterr().out
+    assert "need attention" in capsys.readouterr().out
     assert run("report", repo / "report.json", "--exit-status") == 1
     monkeypatch.setattr(sys, "stdin", io.StringIO((repo / "report.json").read_text()))
     assert run("report", "-", "-f", "text") == 0

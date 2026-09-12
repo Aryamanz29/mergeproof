@@ -113,7 +113,7 @@ def test_broken_or_unknown_checks_become_errors(pol, registry, monkeypatch):
 def test_no_rules_apply(pol, registry):
     report = engine.evaluate(pol, make_context(files=["README.md"], title="docs"), registry)
     assert report.verdict == Status.PASS and report.matched == []
-    assert "no rules apply" in render.report_markdown(report)
+    assert "No rules apply" in render.report_markdown(report)
     assert "nothing to check" in render.report_text(report)
 
 

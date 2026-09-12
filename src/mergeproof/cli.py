@@ -153,6 +153,7 @@ def cmd_check(args: argparse.Namespace) -> int:
     pol = load_policy(args, registry)
     ctx = build_context(args)
     report = engine.evaluate(pol, ctx, registry)
+    report.policy_path = args.policy
     if args.output:
         Path(args.output).write_text(report.to_json(), encoding="utf-8")
     if not args.quiet:
@@ -177,7 +178,7 @@ def publish(report: Report, comment: bool = True, status: bool = False, check_ru
                 client,
                 report.repo,
                 report.number,
-                render.report_markdown(report),
+                render.report_markdown(report, run_url=link),
                 render.MARKER,
                 create=bool(report.matched),
             )
@@ -187,7 +188,7 @@ def publish(report: Report, comment: bool = True, status: bool = False, check_ru
                 file=sys.stderr,
             )
         if check_run:
-            summary = render.report_markdown(report, marker=False)
+            summary = render.report_markdown(report, marker=False, run_url=link)
             url = github.create_check_run(
                 client,
                 report.repo,

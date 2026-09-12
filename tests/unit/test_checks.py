@@ -74,7 +74,7 @@ class TestEvidenceField:
         out = run_check(EvidenceField(), ctx, key="absent")
         assert out.status == Status.FAIL and "missing" in out.summary
         out = run_check(EvidenceField(), make_context(body="nothing"), key="environment")
-        assert "no ```evidence block" in out.summary
+        assert "no `evidence` block" in out.summary
         out = run_check(EvidenceField(), make_context(body="```evidence\n- x\n```"), key="environment")
         assert out.status == Status.FAIL and out.details
 

@@ -41,6 +41,7 @@ def evaluate(policy: Policy, ctx: Context, registry: Registry) -> Report:
         repo=ctx.repo,
         number=ctx.number,
         head_sha=ctx.head_sha,
+        base_ref=ctx.base_ref,
     )
     for rule in policy.rules:
         matched, files = applies(rule.when, ctx)
