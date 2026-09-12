@@ -10,6 +10,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write   # to dispatch the publish workflows
 
 jobs:
   release-please:
@@ -19,7 +20,18 @@ jobs:
       # the release PR is opened as you and CI starts on it. With the workflow token it cannot
       # start CI; close and reopen the PR once and the checks run.
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+      # A tag created with the workflow token does not start tag-triggered workflows, but a
+      # workflow_dispatch made with that token does. So publish from here, explicitly.
+      - name: Publish the release that was just created
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag_name }}
+        run: |
+          gh workflow run release.yml --ref "$TAG" -f tag="$TAG"
+          gh workflow run image.yml   --ref "$TAG" -f tag="$TAG"

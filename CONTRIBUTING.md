@@ -38,10 +38,7 @@ the release process:
    contents and pull requests read and write) the PR is opened as a person and CI starts on it;
    without it, close and reopen the PR once and the checks run.
 3. Merging that PR creates the `vX.Y.Z` tag and the GitHub Release.
-4. The tag triggers `release.yml`. GitHub does not start workflows from tags created with the
-   workflow token, so without `RELEASE_PLEASE_TOKEN` re-push the tag (`git push origin :refs/tags/vX.Y.Z && git push origin vX.Y.Z`)
-   or run the two workflows manually with the tag as input. With the token, it is automatic.
-   `release.yml` (wheel and sdist to PyPI through trusted publishing, attached to
+4. release-please then dispatches `release.yml` (wheel and sdist to PyPI through trusted publishing, attached to
    the GitHub Release) and `image.yml` (`ghcr.io/aryamanz29/mergeproof:X.Y.Z`, `:X.Y`, `:X`,
    `:latest`).
 
