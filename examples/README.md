@@ -12,7 +12,7 @@ cannot silently rot.
 | [`web-service/`](web-service/) | migrations need rollback notes, UI changes need screenshots, sensitive paths need a label |
 | [`plugins/mergeproof-langfuse/`](plugins/mergeproof-langfuse/) | a verifier plugin that looks trace links up in Langfuse |
 
-Run one yourself:
+Run one yourself (the scenario files are the JSON `mergeproof context` prints, with the verdict expected):
 
 ```sh
 mergeproof check --policy examples/python-library/mergeproof.yaml \
