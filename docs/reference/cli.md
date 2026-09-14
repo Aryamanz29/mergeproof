@@ -6,7 +6,7 @@ mergeproof explain        what this change must prove and what is missing
 mergeproof template       the evidence block still missing for this change
 mergeproof validate       check the policy file; with `extends`, list where each rule comes from
 mergeproof init           write a starter policy
-mergeproof checks         list available checks and their parameters
+mergeproof checks         list available checks and their parameters; --usage counts what a policy uses
 mergeproof agent-prompt   render an AGENTS.md section from the policy
 mergeproof receipt        what a merged pull request proved, by merge sha or #number
 mergeproof replay         evaluate a policy against merged pull requests; posts nothing
