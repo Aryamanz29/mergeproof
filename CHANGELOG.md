@@ -4,6 +4,68 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). From 0.2.0 on, entries are generated
 by release-please from Conventional Commit messages.
 
+## [1.0.0](https://github.com/Aryamanz29/mergeproof/compare/v0.6.0...v1.0.0) (2026-09-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove the check-run option; the commit status is the signal
+
+### Added
+
+* **checks:** approving review can satisfy review.human_verified ([a660f60](https://github.com/Aryamanz29/mergeproof/commit/a660f60698e474dc4488cf45997ef59d9ee9d91a))
+* **checks:** approving review can satisfy review.human_verified ([aac963a](https://github.com/Aryamanz29/mergeproof/commit/aac963a7764d955372cb7d7441fd6d0deee66dfa))
+* **checks:** evaluation-run check for prompt and model changes ([551748a](https://github.com/Aryamanz29/mergeproof/commit/551748ad6f02e37a97b3d4ca4baf57e5189a1704))
+* **checks:** evaluation-run check for prompt and model changes ([0e79bf1](https://github.com/Aryamanz29/mergeproof/commit/0e79bf1353721321dec987ab99351da97b7eda01)), closes [#50](https://github.com/Aryamanz29/mergeproof/issues/50)
+* **checks:** evidence.artifacts with pair, single and set kinds ([16021b2](https://github.com/Aryamanz29/mergeproof/commit/16021b241cf38cfd56cc9f438161d0a1c839d629))
+* **checks:** evidence.artifacts with pair, single and set kinds ([0c06980](https://github.com/Aryamanz29/mergeproof/commit/0c06980e35b39e1850293fb4e4c883d3fd6d8ce9)), closes [#47](https://github.com/Aryamanz29/mergeproof/issues/47)
+* **cli:** doctor checks the policy, the workflow and the branch rules ([b92103d](https://github.com/Aryamanz29/mergeproof/commit/b92103d341290e2cf9631c82cabd7d5ba9e151f9))
+* **cli:** doctor checks the policy, the workflow and the branch rules ([85acc8b](https://github.com/Aryamanz29/mergeproof/commit/85acc8bd251634dd1c0f81197cc21f9e488ccf96)), closes [#49](https://github.com/Aryamanz29/mergeproof/issues/49)
+* **cli:** keep shell checks visible; document when one should become a plugin ([3c938c3](https://github.com/Aryamanz29/mergeproof/commit/3c938c36b02eb8091474b6696efe637b59f80350))
+* **cli:** keep shell checks visible; document when one should become a plugin ([0038f66](https://github.com/Aryamanz29/mergeproof/commit/0038f66013b6bca7f2a99053b8531cfe262536f9)), closes [#53](https://github.com/Aryamanz29/mergeproof/issues/53)
+* **cli:** replay a policy against merged pull requests ([c778417](https://github.com/Aryamanz29/mergeproof/commit/c7784179ab3ae1f2959619100fb2d05922a20cd1))
+* **cli:** replay a policy against merged pull requests ([bdd6614](https://github.com/Aryamanz29/mergeproof/commit/bdd66148e601889af01e2f9b943f9249d884dfc4)), closes [#44](https://github.com/Aryamanz29/mergeproof/issues/44)
+* **policy:** extends pulls rules from pinned base policies ([9b8d138](https://github.com/Aryamanz29/mergeproof/commit/9b8d1387d188b3293764a7cce21f2016d6b4a549))
+* **policy:** extends pulls rules from pinned base policies ([94aa654](https://github.com/Aryamanz29/mergeproof/commit/94aa6544cf24c699b1b85bdbb628513661e243e2)), closes [#45](https://github.com/Aryamanz29/mergeproof/issues/45)
+* **receipt:** store the final report on a branch when the pull request merges ([312172c](https://github.com/Aryamanz29/mergeproof/commit/312172c6f985d0beaf0da5249dc91ef18796f2c8))
+* **receipt:** store the final report on a branch when the pull request merges ([ad9c3b7](https://github.com/Aryamanz29/mergeproof/commit/ad9c3b70c750f6b5d0c33d0792b75aa59f453d26)), closes [#43](https://github.com/Aryamanz29/mergeproof/issues/43)
+* remove the check-run option; the commit status is the signal ([f71b8f8](https://github.com/Aryamanz29/mergeproof/commit/f71b8f819b908f529d06c7d12af82e8197d147b4)), closes [#48](https://github.com/Aryamanz29/mergeproof/issues/48)
+* **report:** review comments on the files concerned; one truth for counts ([adc32c6](https://github.com/Aryamanz29/mergeproof/commit/adc32c66e85b04a12451e2d6af0e1e5d2a46673c))
+* **report:** review comments on the files concerned; one truth for counts ([bd7a41b](https://github.com/Aryamanz29/mergeproof/commit/bd7a41b71e1c01525436adf8fef5026f2880bf3c))
+* **report:** scorecard comment ([69dd3b4](https://github.com/Aryamanz29/mergeproof/commit/69dd3b4536ffaa1d86b13fab9ca96429ce9fd53e))
+* the 1.0 contract: policy schema, version check, frozen public API ([e6d685e](https://github.com/Aryamanz29/mergeproof/commit/e6d685e8f10418336673d989a9f553e1185fe3a7))
+* the 1.0 contract: policy schema, version check, frozen public API ([c8af670](https://github.com/Aryamanz29/mergeproof/commit/c8af6705f22c4fd7a075cf3adc2f3fa593cd762f)), closes [#52](https://github.com/Aryamanz29/mergeproof/issues/52)
+* **verifiers:** results carry provenance ([4fc9f28](https://github.com/Aryamanz29/mergeproof/commit/4fc9f281a8ee8a81f99f333904eaa4a21a289b1d))
+* **verifiers:** results carry provenance ([a3a1ec0](https://github.com/Aryamanz29/mergeproof/commit/a3a1ec08f81fda9581e88674cffd0a6747ff96ff)), closes [#46](https://github.com/Aryamanz29/mergeproof/issues/46)
+
+
+### Fixed
+
+* **cli:** publish review comments when asked ([ded5b26](https://github.com/Aryamanz29/mergeproof/commit/ded5b26921a519dcb18a446247855c7650af63ec))
+* **report:** publish review comments when asked; integration assertion follows the new header ([453615a](https://github.com/Aryamanz29/mergeproof/commit/453615a57455b59100310b0aed452fa6887a5dc1))
+
+
+### Documentation
+
+* checkout ref in block style; the flow form was not valid YAML ([3160ccd](https://github.com/Aryamanz29/mergeproof/commit/3160ccd8cf88951fc206e44a1ed25d9fc31b25d4))
+* checkout ref in block style; the flow form was not valid YAML ([bbbd5e5](https://github.com/Aryamanz29/mergeproof/commit/bbbd5e5dbc4bc64ed12b758f8be857192b79abbb))
+* documentation site with MkDocs Material, README revamp ([ae7989c](https://github.com/Aryamanz29/mergeproof/commit/ae7989c7f7136f3622ff53b614f023d39b6292a3))
+* documentation site with MkDocs Material, README revamp ([b736eff](https://github.com/Aryamanz29/mergeproof/commit/b736eff3e8c921c710e8e5c9bb7b5c1b8fe55bbe))
+* documentation site with MkDocs Material, README revamp ([0cf0642](https://github.com/Aryamanz29/mergeproof/commit/0cf06421efc09a56ab42494121553bdb07291612))
+* how-it-works diagram drawn with D2 ([509865c](https://github.com/Aryamanz29/mergeproof/commit/509865c1f3cd8e7c0299b801aea5fa4c3d501996))
+* how-it-works diagram drawn with D2, used by the README and the docs site ([71d9ad5](https://github.com/Aryamanz29/mergeproof/commit/71d9ad52878474e4df35e620bdb9fb23f5dea81f))
+* **readme:** absolute image and link URLs so PyPI renders it ([6156555](https://github.com/Aryamanz29/mergeproof/commit/61565559b5cfdb4505f3c2d0a7824f8405b9d296))
+* **readme:** real screenshots, a flow diagram and a script that regenerates them ([5bd6be8](https://github.com/Aryamanz29/mergeproof/commit/5bd6be85f3a32a7c3fd9753c5032b70eee7e01cc))
+* **readme:** real screenshots, a flow diagram and a script that regenerates them ([2deb265](https://github.com/Aryamanz29/mergeproof/commit/2deb2654f061377aa9227b219357dc7b8708efc4))
+* **readme:** same wordmark as the docs site ([24aa865](https://github.com/Aryamanz29/mergeproof/commit/24aa8655fc0e8f70681e2780f179be48e24b367e))
+* **readme:** size screenshots to their content; plain-text mermaid labels ([a5dbec3](https://github.com/Aryamanz29/mergeproof/commit/a5dbec39b46e6bb7643ef2cc0b917c61531e2a31))
+* render octicon shortcodes on the landing page ([321989a](https://github.com/Aryamanz29/mergeproof/commit/321989a6a2fa465c08f8fba8e0528e8c2fce7e76))
+
+
+### Chores
+
+* **release:** cut 1.0.0 ([5cbec3b](https://github.com/Aryamanz29/mergeproof/commit/5cbec3b537b10fb1f9a76013f323b7a0e2354a9d))
+
 ## [0.6.0](https://github.com/Aryamanz29/mergeproof/compare/v0.5.0...v0.6.0) (2026-09-12)
 
 
