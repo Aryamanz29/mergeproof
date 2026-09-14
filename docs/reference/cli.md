@@ -34,7 +34,7 @@ JSON report as well as printing.
 
 Contexts and reports are plain JSON, so the stages compose:
 
-<p align="center"><img src="pipeline.svg" alt="context, check, report, comment as a pipeline" width="820"></p>
+<p align="center"><img src="../../assets/pipeline.svg" alt="context, check, report, comment as a pipeline" width="820"></p>
 
 ```sh
 mergeproof context --github > pr.json                 # snapshot a PR

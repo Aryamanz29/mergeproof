@@ -52,6 +52,6 @@ author are excluded, and the phrase is bound to the head commit.
 ## Non-deterministic reviewers
 
 LLM review agents take part as witnesses. They post a `verdict` block (see
-[policy.md](policy.md#agentverdict)) and `agent.verdict` turns it into a requirement, bound to the
+[the checks reference](../reference/checks.md#agentverdict)) and `agent.verdict` turns it into a requirement, bound to the
 head commit and to an allowed bot account. If a reviewer already speaks in labels, `pr.labels`
 consumes those.

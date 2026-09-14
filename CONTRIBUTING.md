@@ -5,6 +5,7 @@ make setup        # uv sync, example plugin, pre-commit hooks
 make lint typecheck test
 make integration  # slower: spawns the CLI against the examples and the plugin
 make check        # this repository's own gate, against your working tree
+make docs-serve   # the documentation site, live-reloading at http://127.0.0.1:8000
 ```
 
 Pull requests here are gated by `mergeproof.yaml` at the root. Run `mergeproof explain` before
@@ -18,7 +19,8 @@ Guidelines:
   `examples/plugins/`).
 - Tests that exercise a real boundary (a subprocess, an HTTP call, a git repository) belong in
   `tests/integration` and are marked `integration`.
-- Add a line to `CHANGELOG.md` under Unreleased for anything a user would notice.
+- `CHANGELOG.md` is written by release-please from commit messages; do not edit it by hand.
+- Documentation lives in `docs/` and is built with MkDocs; `make docs` fails on a broken link.
 
 ## Commits and releases
 

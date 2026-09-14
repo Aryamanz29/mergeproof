@@ -25,6 +25,18 @@ jobs:
       - run: uv run mypy
       - run: uv run pre-commit run --all-files --show-diff-on-failure
 
+  docs:
+    name: docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: pyproject.toml
+      - run: uv sync --only-group docs
+      - run: uv run --no-sync mkdocs build --strict
+
   unit:
     name: unit (${{ matrix.python }})
     runs-on: ubuntu-latest

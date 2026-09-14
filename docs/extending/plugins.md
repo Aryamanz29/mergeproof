@@ -79,7 +79,7 @@ jaeger = "mypkg.verifiers:JaegerVerifier"
     verify: jaeger
 ```
 
-The complete worked example is [`examples/plugins/mergeproof-langfuse`](../examples/plugins/mergeproof-langfuse):
+The complete worked example is [`examples/plugins/mergeproof-langfuse`](https://github.com/Aryamanz29/mergeproof/tree/main/examples/plugins/mergeproof-langfuse):
 a verifier for Langfuse and a `langfuse.traces` check that is `evidence.links` with Langfuse
-defaults, in about forty lines with tests. [`mergeproof-braintrust`](../examples/plugins/mergeproof-braintrust)
+defaults, in about forty lines with tests. [`mergeproof-braintrust`](https://github.com/Aryamanz29/mergeproof/tree/main/examples/plugins/mergeproof-braintrust)
 is the same shape for Braintrust, looking ids up through BTQL.
