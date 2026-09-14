@@ -26,13 +26,19 @@ def test_pattern_captures_org_project_and_id():
 
 @respx.mock
 def test_verifier_queries_btql_by_id_and_root_span():
-    route = respx.post("https://api.braintrust.dev/btql").mock(
-        return_value=httpx.Response(200, json={"data": [{"id": "x"}]})
-    )
+    rows = [
+        {"id": "b6f98332e178f658", "created": "2026-09-14T17:02:01Z", "span_attributes": {"name": "search"}},
+        {"id": "child-1", "created": "2026-09-14T17:02:02Z", "span_attributes": {"name": "llm"}},
+        {"id": "child-2", "created": "2026-09-14T17:02:03Z", "span_attributes": None},
+    ]
+    route = respx.post("https://api.braintrust.dev/btql").mock(return_value=httpx.Response(200, json={"data": rows}))
     verifier = BraintrustVerifier()
-    assert verifier.verify(LINK, re.match(TRACE_URL, LINK))
+    found = verifier.verify(LINK, re.match(TRACE_URL, LINK))
+    assert found.found and found.size == "3 spans" and found.at == "2026-09-14T17:02:01Z"
+    assert found.facts == {"project": "mcp-internal", "name": "search"}
+    assert found.line() == "braintrust · mcp-internal · search · 3 spans · 2026-09-14T17:02:01Z"
     sent = json.loads(route.calls[0].request.content)
-    assert "project_logs('mcp-internal')" in sent["query"]
+    assert "project_logs('mcp-internal')" in sent["query"] and "SELECT id, created, span_attributes" in sent["query"]
     assert "id = 'b6f98332e178f658' OR root_span_id = 'b6f98332e178f658'" in sent["query"]
     assert route.calls[0].request.headers["Authorization"] == "Bearer k"
 
@@ -41,7 +47,8 @@ def test_verifier_queries_btql_by_id_and_root_span():
 def test_verifier_reports_missing_and_pins_project():
     route = respx.post("https://api.braintrust.dev/btql").mock(return_value=httpx.Response(200, json={"data": []}))
     verifier = BraintrustVerifier(project="prod")
-    assert not verifier.verify(LINK, re.match(TRACE_URL, LINK))
+    missing = verifier.verify(LINK, re.match(TRACE_URL, LINK))
+    assert not missing.found and missing.facts == {"project": "prod"}
     assert "project_logs('prod')" in json.loads(route.calls[0].request.content)["query"]
 
 

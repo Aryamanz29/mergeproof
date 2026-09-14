@@ -16,11 +16,19 @@ LINK = "https://lf.example.com/project/p1/traces/t-1"
 def test_verifier_uses_public_api_with_basic_auth(monkeypatch):
     monkeypatch.setenv("LANGFUSE_PUBLIC_KEY", "pk")
     monkeypatch.setenv("LANGFUSE_SECRET_KEY", "sk")
-    route = respx.get("https://lf.example.com/api/public/traces/t-1").mock(return_value=httpx.Response(200, json={}))
+    route = respx.get("https://lf.example.com/api/public/traces/t-1").mock(
+        return_value=httpx.Response(
+            200, json={"name": "search", "timestamp": "2026-09-14T17:02:00Z", "observations": [{}, {}, {}]}
+        )
+    )
     respx.get("https://lf.example.com/api/public/traces/t-2").mock(return_value=httpx.Response(404))
     verifier = LangfuseVerifier()
-    assert verifier.verify(LINK, re.match(TRACE_URL, LINK))
-    assert not verifier.verify(LINK.replace("t-1", "t-2"), re.match(TRACE_URL, LINK.replace("t-1", "t-2")))
+    found = verifier.verify(LINK, re.match(TRACE_URL, LINK))
+    assert found.found and found.id == "t-1" and found.size == "3 observations" and found.at == "2026-09-14T17:02:00Z"
+    assert found.facts == {"project": "p1", "name": "search"}
+    assert found.line() == "langfuse · p1 · search · 3 observations · 2026-09-14T17:02:00Z"
+    missing = verifier.verify(LINK.replace("t-1", "t-2"), re.match(TRACE_URL, LINK.replace("t-1", "t-2")))
+    assert not missing.found and missing.source == "langfuse"
     assert route.calls[0].request.headers["Authorization"].startswith("Basic ")
 
 

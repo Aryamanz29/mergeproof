@@ -48,12 +48,17 @@ messages that become job annotations and review comments). `explain` is what age
 
 ## A verifier
 
-A verifier resolves a link from `evidence.links` to a yes or no. It is a class taking keyword
-options and exposing `verify(url, match)`, where `match` is the policy pattern's match object, so
-named groups such as `trace_id` are available.
+A verifier resolves a link from `evidence.links` to an answer with provenance. It is a class
+taking keyword options and exposing `verify(url, match)`, where `match` is the policy pattern's
+match object, so named groups such as `trace_id` are available. Return a bool for yes or no, or a
+`Verification` to say *what* was found: the object's id, when it was recorded, how big it is, and
+any facts worth keeping. The comment shows that line next to the link and the receipt stores it,
+so a reviewer can tell a real trace from an empty one without opening it.
 
 ```python
 import httpx
+
+from mergeproof.verifiers import Verification
 
 
 class JaegerVerifier:
@@ -61,11 +66,23 @@ class JaegerVerifier:
         self.host = host
         self._client = httpx.Client(timeout=timeout)
 
-    def verify(self, url: str, match) -> bool:
+    def verify(self, url: str, match) -> Verification:
         host = self.host or match.group("host")
         response = self._client.get(f"{host}/api/traces/{match.group('trace_id')}")
-        return response.status_code == 200
+        if response.status_code != 200:
+            return Verification(found=False, source="jaeger")
+        trace = response.json()["data"][0]
+        return Verification(
+            found=True,
+            source="jaeger",
+            id=trace["traceID"],
+            size=f"{len(trace['spans'])} spans",
+            facts={"service": trace["processes"]["p1"]["serviceName"]},
+        )
 ```
+
+`Verification.line()` renders as `jaeger · frontend · 14 spans`; every field except `found` is
+optional, and a plain `return True` still works.
 
 ```toml
 [project.entry-points."mergeproof.verifiers"]

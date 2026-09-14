@@ -17,6 +17,7 @@ import httpx
 from pydantic import Field
 
 from mergeproof.checks.evidence_links import EvidenceLinks
+from mergeproof.verifiers import Verification
 
 TRACE_URL = r"^(?P<host>https?://[^/]+)/project/(?P<project>[^/]+)/traces/(?P<trace_id>[\w-]+)"
 
@@ -41,7 +42,7 @@ class LangfuseVerifier:
         auth = (public, secret) if public and secret else None
         self._client = httpx.Client(auth=auth, timeout=timeout, headers={"User-Agent": "mergeproof-langfuse"})
 
-    def verify(self, url: str, match: re.Match[str]) -> bool:
+    def verify(self, url: str, match: re.Match[str]) -> Verification:
         groups = match.groupdict()
         host = self.host or groups.get("host")
         trace_id = groups.get("trace_id")
@@ -49,9 +50,18 @@ class LangfuseVerifier:
             raise ValueError("the link pattern must capture `host` and `trace_id`")
         response = self._client.get(f"{host}/api/public/traces/{trace_id}")
         if response.status_code == 404:
-            return False
+            return Verification(found=False, source="langfuse", id=trace_id)
         response.raise_for_status()
-        return True
+        trace = response.json() if response.content else {}
+        observations = trace.get("observations")
+        return Verification(
+            found=True,
+            source="langfuse",
+            id=trace_id,
+            at=trace.get("timestamp"),
+            size=f"{len(observations)} observations" if isinstance(observations, list) else None,
+            facts={"project": groups.get("project"), "name": trace.get("name")},
+        )
 
 
 class LangfuseTraces(EvidenceLinks):

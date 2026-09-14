@@ -239,3 +239,22 @@ def test_footer_links_the_receipt_when_there_is_one():
     text = render.report_markdown(report, run_url="https://run/1", receipt_url="https://github.com/o/r/blob/x/r.json")
     assert "[details](https://run/1) · [receipt](https://github.com/o/r/blob/x/r.json)" in text
     assert "[receipt]" not in render.report_markdown(report, run_url="https://run/1")
+
+
+def test_satisfied_rows_show_what_was_found():
+    from mergeproof.report import Outcome, Report, RequirementResult, RuleResult
+
+    req = RequirementResult(
+        label="before/after traces",
+        check="evidence.links",
+        severity="block",
+        outcome=Outcome(
+            status=Status.PASS,
+            summary="1 before/after pair, all verified",
+            details=["before: braintrust · 3 spans", "after: braintrust · 14 spans | more"],
+        ),
+    )
+    rule = RuleResult(id="live-evidence", severity="block", matched=True, files=["src/a.py"], requirements=[req])
+    text = render.report_markdown(Report(rules=[rule]))
+    detail = "before: braintrust · 3 spans<br>after: braintrust · 14 spans \\| more"
+    assert f"1 before/after pair, all verified<br><sub>{detail}</sub>" in text
