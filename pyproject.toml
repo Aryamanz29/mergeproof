@@ -35,9 +35,14 @@ dev = [
   "ruff>=0.6",
   "types-PyYAML",
 ]
+docs = [
+  "mkdocs>=1.6,<2",
+  "mkdocs-material>=9.6,<10",
+]
 
 [project.urls]
 Homepage = "https://github.com/Aryamanz29/mergeproof"
+Documentation = "https://aryamanz29.github.io/mergeproof/"
 Issues = "https://github.com/Aryamanz29/mergeproof/issues"
 Changelog = "https://github.com/Aryamanz29/mergeproof/blob/main/CHANGELOG.md"
 

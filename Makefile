@@ -1,4 +1,4 @@
-.PHONY: help setup lint fmt typecheck test integration check build clean
+.PHONY: help setup lint fmt typecheck test integration check docs docs-serve build clean
 
 help:            ## show this help
 	@grep -E '^[a-z]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*## /\t/' | column -t -s "$$(printf '\t')"
@@ -28,9 +28,15 @@ integration:     ## drive the installed CLI, examples and plugin
 check:           ## run this repository's own gate against the working tree
 	uv run mergeproof check --local
 
+docs:            ## build the documentation site into site/
+	uv run --group docs mkdocs build --strict
+
+docs-serve:      ## serve the documentation with live reload
+	uv run --group docs mkdocs serve
+
 build:           ## sdist + wheel into dist/
 	uv build
 
 clean:
-	rm -rf dist build .pytest_cache .mypy_cache .ruff_cache .coverage htmlcov
+	rm -rf dist build site .pytest_cache .mypy_cache .ruff_cache .coverage htmlcov
 	find . -name __pycache__ -type d -prune -exec rm -rf {} +
