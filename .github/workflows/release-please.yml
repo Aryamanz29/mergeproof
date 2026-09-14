@@ -3,6 +3,11 @@ name: release-please
 # Keeps one release PR open on main. It carries the next version (from conventional commits)
 # and the changelog entry. Merging it creates the tag and the GitHub Release; release.yml and
 # image.yml then publish to PyPI and GHCR from that tag.
+#
+# Everything here runs with the workflow token, which cannot start other workflows through
+# pushes, tags or pull requests. workflow_dispatch is the exception, so this job dispatches
+# CI onto the release PR and the publish workflows onto the tag itself, and re-checks on
+# every push to main that the newest release actually reached PyPI.
 on:
   push:
     branches: [main]
@@ -10,28 +15,58 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  actions: write   # to dispatch the publish workflows
+  actions: write   # to dispatch ci.yml, release.yml and image.yml
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      # With RELEASE_PLEASE_TOKEN (a fine-grained PAT: contents and pull requests, read and write)
-      # the release PR is opened as you and CI starts on it. With the workflow token it cannot
-      # start CI; close and reopen the PR once and the checks run.
       - uses: googleapis/release-please-action@v4
         id: release
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
-      # A tag created with the workflow token does not start tag-triggered workflows, but a
-      # workflow_dispatch made with that token does. So publish from here, explicitly.
+
+      - name: Outputs, for the next time this needs debugging
+        env:
+          OUTPUTS: ${{ toJSON(steps.release.outputs) }}
+        run: printf '%s\n' "$OUTPUTS" | jq 'del(.body)'
+
+      - name: Start CI on the release pull request
+        if: steps.release.outputs.prs_created == 'true' && steps.release.outputs.pr != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ steps.release.outputs.pr }}
+        run: |
+          number="$(jq -r .number <<<"$PR")"
+          branch="$(jq -r .headBranchName <<<"$PR")"
+          gh workflow run ci.yml --ref "$branch" -f pr="$number"
+
       - name: Publish the release that was just created
-        if: ${{ steps.release.outputs.release_created == 'true' }}
+        if: steps.release.outputs.releases_created == 'true' || steps.release.outputs.release_created == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.release.outputs.tag_name }}
         run: |
-          gh workflow run release.yml --ref "$TAG" -f tag="$TAG"
-          gh workflow run image.yml   --ref "$TAG" -f tag="$TAG"
+          tag="${TAG:-$(gh release view --json tagName -q .tagName)}"
+          gh workflow run release.yml --ref "$tag" -f tag="$tag"
+          gh workflow run image.yml   --ref "$tag" -f tag="$tag"
+
+      - name: Publish the newest release if PyPI still does not have it
+        if: steps.release.outputs.releases_created != 'true' && steps.release.outputs.release_created != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="$(gh release view --json tagName -q .tagName 2>/dev/null)" || { echo "no release yet"; exit 0; }
+          version="${tag#v}"
+          if curl -fsS "https://pypi.org/pypi/mergeproof/$version/json" >/dev/null; then
+            echo "$tag is on PyPI"; exit 0
+          fi
+          if gh run list --workflow release.yml --json status,headBranch \
+               -q ".[] | select(.headBranch == \"$tag\" and .status != \"completed\")" | grep -q .; then
+            echo "a publish run for $tag is in progress"; exit 0
+          fi
+          echo "$tag is not on PyPI; publishing"
+          gh workflow run release.yml --ref "$tag" -f tag="$tag"
+          gh workflow run image.yml   --ref "$tag" -f tag="$tag"
