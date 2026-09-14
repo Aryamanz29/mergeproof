@@ -33,23 +33,21 @@ jobs:
           OUTPUTS: ${{ toJSON(steps.release.outputs) }}
         run: printf '%s\n' "$OUTPUTS" | jq 'del(.body)'
 
-      - name: Start CI on the release pull request
-        if: steps.release.outputs.prs_created == 'true' && steps.release.outputs.pr != ''
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR: ${{ steps.release.outputs.pr }}
-        run: |
-          number="$(jq -r .number <<<"$PR")"
-          branch="$(jq -r .headBranchName <<<"$PR")"
-          gh workflow run ci.yml --ref "$branch" -f pr="$number"
-
+      # Every gh call names the repository: there is no checkout in this job.
       - name: Publish the release that was just created
         if: steps.release.outputs.releases_created == 'true' || steps.release.outputs.release_created == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           TAG: ${{ steps.release.outputs.tag_name }}
         run: |
           tag="${TAG:-$(gh release view --json tagName -q .tagName)}"
+          # The tag was created moments ago; make sure the API serves it before dispatching onto it.
+          for i in 1 2 3 4 5 6; do
+            gh api "repos/$GH_REPO/git/ref/tags/$tag" >/dev/null 2>&1 && break
+            echo "tag $tag not visible yet, waiting"; sleep 10
+          done
+          gh api "repos/$GH_REPO/git/ref/tags/$tag" >/dev/null
           gh workflow run release.yml --ref "$tag" -f tag="$tag"
           gh workflow run image.yml   --ref "$tag" -f tag="$tag"
 
@@ -57,6 +55,7 @@ jobs:
         if: steps.release.outputs.releases_created != 'true' && steps.release.outputs.release_created != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           tag="$(gh release view --json tagName -q .tagName 2>/dev/null)" || { echo "no release yet"; exit 0; }
           version="${tag#v}"
@@ -70,3 +69,15 @@ jobs:
           echo "$tag is not on PyPI; publishing"
           gh workflow run release.yml --ref "$tag" -f tag="$tag"
           gh workflow run image.yml   --ref "$tag" -f tag="$tag"
+
+      - name: Start CI on the release pull request
+        if: steps.release.outputs.prs_created == 'true' && steps.release.outputs.pr != ''
+        continue-on-error: true   # a missing CI run is a nuisance; a missed publish is not, so this goes last
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ steps.release.outputs.pr }}
+        run: |
+          number="$(jq -r .number <<<"$PR")"
+          branch="$(jq -r .headBranchName <<<"$PR")"
+          gh workflow run ci.yml --ref "$branch" -f pr="$number"
