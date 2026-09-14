@@ -27,7 +27,8 @@ rules:
 ```
 
 `mergeproof validate` checks the file: unknown checks and bad parameters are reported with the
-rule and requirement they belong to.
+rule and requirement they belong to. A [JSON schema](../reference/schema.md) gives editors the
+same knowledge as you type; `mergeproof init` puts its `$schema` line at the top of the file.
 
 ## `when`: which changes a rule applies to
 

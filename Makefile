@@ -1,4 +1,4 @@
-.PHONY: help setup lint fmt typecheck test integration check docs docs-serve diagrams screenshots build clean
+.PHONY: help setup lint fmt typecheck test integration check docs docs-serve diagrams screenshots schema build clean
 
 help:            ## show this help
 	@grep -E '^[a-z]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*## /\t/' | column -t -s "$$(printf '\t')"
@@ -40,6 +40,9 @@ diagrams:        ## render docs/diagrams/*.d2 to docs/assets (needs d2: brew ins
 screenshots:     ## re-shoot the README pictures from live output (needs gh and Chrome)
 	uv run scripts/screenshots comment 33
 	uv run scripts/screenshots explain examples/python-library missing-tests
+
+schema:          ## regenerate docs/schema/mergeproof-v1.json from the models
+	uv run mergeproof schema > docs/schema/mergeproof-v1.json
 
 build:           ## sdist + wheel into dist/
 	uv build

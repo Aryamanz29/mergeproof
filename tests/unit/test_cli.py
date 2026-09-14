@@ -155,6 +155,7 @@ def test_command_surface_is_the_documented_one(capsys):
         "agent-prompt",
         "receipt",
         "replay",
+        "schema",
         "doctor",
     }
     assert "mcp" not in commands
@@ -427,3 +428,14 @@ def test_doctor_command_exit_codes_and_json(tmp_path, monkeypatch, capsys):
     assert run("doctor", "-p", tmp_path / "mergeproof.yaml", "--root", tmp_path, "-f", "json") == 1
     data = json.loads(capsys.readouterr().out)
     assert any(f["level"] == "error" and "no workflow under" in f["message"] for f in data)
+
+
+def test_schema_command_and_init_hint(tmp_path, capsys):
+    from mergeproof import schema
+
+    assert run("schema") == 0
+    assert json.loads(capsys.readouterr().out)["$id"] == schema.SCHEMA_URL
+    assert run("init", "-p", tmp_path / "mergeproof.yaml") == 0
+    first = (tmp_path / "mergeproof.yaml").read_text().splitlines()[0]
+    assert first == schema.EDITOR_HINT
+    assert run("validate", "-p", tmp_path / "mergeproof.yaml") == 0
