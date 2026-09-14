@@ -33,6 +33,8 @@ plugin (`verify: langfuse`). Writing a verifier for the other two is a dozen lin
 | `fix-without-evidence.json` | fail: tool changed with tests, but no evidence block |
 | `fix-awaiting-review.json` | pending: evidence present and verified, no human sign-off yet |
 | `fix-verified.json` | pass |
+| `fix-approved.json` | pass: the reviewer approved the head commit instead of posting the phrase |
+| `fix-approved-before-last-push.json` | pending: the approval is on an older commit |
 
 The trace links in the scenarios use `{{BASE_URL}}`; the integration test substitutes a local
 Langfuse-compatible stub so verification runs for real without network access.
