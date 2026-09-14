@@ -10,8 +10,8 @@ Copy [`examples/github-workflow.yml`](https://github.com/Aryamanz29/mergeproof/b
   finishes. The `if:` filters out comments on plain issues.
 - **Policy from the base branch.** The checkout uses the default branch, so a pull request cannot
   edit its own rules.
-- **Permissions.** `pull-requests: write` for the comment, `statuses: write` for the commit status,
-  `checks: write` for the Check Run.
+- **Permissions.** `pull-requests: write` for the comment and review comments, `statuses: write`
+  for the commit status, `checks: read` so `ci.job_passed` can see other jobs.
 - **`MERGEPROOF_PR_NUMBER`.** Comment and check-suite events do not carry the PR number where the
   action expects it; this line supplies it.
 
@@ -25,7 +25,6 @@ Copy [`examples/github-workflow.yml`](https://github.com/Aryamanz29/mergeproof/b
 | `comment` | `true` | create or update the sticky comment |
 | `review-comments` | `true` | post what is still needed as file-level review comments, kept in sync on every run |
 | `status` | `true` | set the `mergeproof` commit status; this is the row to require |
-| `check-run` | `false` | also create a `mergeproof` Check Run; off because file annotations already land on the job |
 | `pending-ok` | `false` | let the job succeed while evidence is pending; the status still says pending |
 | `github-token` | `${{ github.token }}` | token used for all three channels |
 
@@ -59,7 +58,7 @@ Why `pending-ok: "true"` is the usual choice: the workflow job then says "the to
 the required `mergeproof` status stays `pending` until evidence arrives, and a pending required
 status blocks the merge button. Green job, blocked merge, clear reason.
 
-## The three report channels
+## The report channels
 
 | channel | where it shows | what it carries |
 |---|---|---|
@@ -67,7 +66,6 @@ status blocks the merge button. Green job, blocked merge, clear reason.
 | commit status | the merge box, requireable | `3 of 5 requirements satisfied, 2 pending`, linking to the comment. Statuses have no check-suite affinity, so a re-run on the same commit, a reopen, or a bot-authored PR all update it correctly |
 | review comments | the Files changed tab, on the file concerned | one comment per unmet requirement: a missing test on the source file, a PR-level requirement on the first file that made its rule apply. Created, updated and removed as the PR evolves |
 | job annotations | the workflow job's row and the diff | "expected a changed test matching …" on the source file, emitted as workflow commands, so they are always on the newest run |
-| Check Run (opt-in) | the Checks tab | the full report as a check; GitHub associates an API-created check run with the first suite on a commit, so on re-runs the merge box may keep waiting for it, which is why it is off by default |
 
 No comment is posted when no rule applies to a change; an existing comment is still updated.
 
@@ -92,7 +90,7 @@ gate:
 
 ## Posting as your own App
 
-The avatar and author on the comment, status and Check Run belong to the token that created them.
+The avatar and author on the comment and the status belong to the token that created them.
 With the default token that is `github-actions`. To post as **mergeproof** with your logo:
 
 1. Create a GitHub App: name `mergeproof`, logo `docs/assets/logo.svg`, webhook inactive. Repository

@@ -13,7 +13,7 @@ Changed source files come with changed test files.
 | `ignore` | source globs exempt from `map` |
 | `existing_only` | only require a test change when a file matching the expanded test glob already exists in the repository; a source whose test module does not exist yet is skipped and listed. Use it for "integration tests in the module, if the module has them" |
 
-Each uncovered source file becomes a Check Run annotation on that file.
+Each uncovered source file becomes a job annotation and a review comment on that file.
 
 ## `files.changed`
 

@@ -24,7 +24,8 @@ inputs:
     description: Set the `mergeproof` commit status (needs statuses:write). This is the row to require; it is re-evaluated correctly on re-runs of the same commit
     default: "true"
   check-run:
-    description: Also create a `mergeproof` Check Run (needs checks:write). Off by default; file annotations already land on the job through workflow commands
+    description: Removed in 0.8. Require the `mergeproof` commit status; file findings land as job annotations and review comments
+    deprecationMessage: check-run was removed in 0.8; require the `mergeproof` commit status instead
     default: "false"
   pending-ok:
     description: Succeed while evidence is still pending instead of failing the check
@@ -64,7 +65,9 @@ runs:
         [ "${{ inputs.comment }}" = "true" ] && args+=(--comment)
         [ "${{ inputs.review-comments }}" = "true" ] && args+=(--review-comments)
         [ "${{ inputs.status }}" = "true" ] && args+=(--status)
-        [ "${{ inputs.check-run }}" = "true" ] && args+=(--check-run)
+        if [ "${{ inputs.check-run }}" = "true" ]; then
+          echo "::error::check-run was removed in 0.8: require the mergeproof commit status instead"; exit 3
+        fi
         set +e
         mergeproof "${args[@]}"
         code=$?

@@ -39,7 +39,7 @@ class ImageSmokeTested(Check):
 `Context` gives you the changed files, title, body, labels, comments, check runs and the parsed
 evidence block. `files` are the changed paths that made the rule apply. Return `Outcome` with a
 status, a one-line summary, optional `details`, a `fix` sentence and `annotations` (file-level
-messages that become Check Run annotations). `explain` is what agents read; keep it one sentence.
+messages that become job annotations and review comments). `explain` is what agents read; keep it one sentence.
 
 ```toml
 [project.entry-points."mergeproof.checks"]
