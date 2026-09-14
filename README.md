@@ -37,16 +37,16 @@ coding agents what to produce before they open the PR.
 
 ```mermaid
 flowchart LR
-    policy["<b>mergeproof.yaml</b><br/>rules: when a change touches X,<br/>it must prove Y"]
-    agent["contributor or coding agent<br/><code>mergeproof explain</code>"]
-    pr["pull request<br/>diff · CI runs · evidence block · reviews"]
-    gate["<b>mergeproof</b> action"]
-    verifiers["verifiers<br/>http · Langfuse · Braintrust · yours"]
-    out["scorecard comment<br/>commit status <code>mergeproof</code><br/>review comments on the files"]
+    policy["mergeproof.yaml<br/>when a change touches X, it must prove Y"]
+    agent["contributor or coding agent<br/>mergeproof explain"]
+    pr["pull request<br/>diff, CI runs, evidence block, reviews"]
+    gate["mergeproof action"]
+    verifiers["verifiers<br/>http, Langfuse, Braintrust, yours"]
+    out["scorecard comment<br/>commit status: mergeproof<br/>review comments on the files"]
 
     policy --> agent --> pr --> gate --> out
     policy --> gate
-    gate <-.->|links are looked up<br/>at their source| verifiers
+    gate -. links are looked up at their source .-> verifiers
 ```
 
 - **One policy file.** A rule pairs a `when` (paths, labels, title, base branch) with what it

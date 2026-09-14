@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Regenerate the README screenshots from real output.
 
-    scripts/screenshots comment 33                                  # -> docs/assets/pr-comment.png
-    scripts/screenshots explain examples/python-library missing-tests   # -> docs/assets/explain.png
+    scripts/screenshots comment 33 [height]                                  # -> docs/assets/pr-comment.png
+    scripts/screenshots explain examples/python-library missing-tests [height]   # -> docs/assets/explain.png
 
 Needs `gh` (for the comment) and Google Chrome or Chromium; nothing else. The comment is the
 HTML GitHub itself rendered, wrapped in github-markdown-css, so the picture is what a reviewer
-sees. Crop the result afterwards, for example `sips -c 1310 1800 --cropOffset 0 0 file.png`.
+sees. The window height is the picture height: pass a third argument to change it when a comment
+is taller or shorter than the default.
 """
 
 from __future__ import annotations
@@ -84,14 +85,14 @@ def shoot(page: str, out: Path, width: int, height: int) -> None:
         flags = ["--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=2"]
         flags += [f"--window-size={width},{height}", "--virtual-time-budget=8000", f"--screenshot={out}"]
         subprocess.run([CHROME, *flags, src.as_uri()], check=True, capture_output=True)
-    print(f"wrote {out.relative_to(ROOT)} at {width}x{height} CSS px, 2x; crop the bottom")
+    print(f"wrote {out.relative_to(ROOT)} at {width}x{height} CSS px, 2x")
 
 
-def comment(pr: str, height: int = 660) -> None:
-    accept = "Accept: application/vnd.github.html+json"
+def comment(pr: str, height: int = 655) -> None:
+    accept = "Accept: application/vnd.github.full+json"  # body (to find ours) and body_html (to render)
     endpoint = f"repos/{{owner}}/{{repo}}/issues/{pr}/comments"
     body = subprocess.run(["gh", "api", "-H", accept, endpoint], check=True, capture_output=True, text=True).stdout
-    ours = [c for c in json.loads(body) if "mergeproof-report" in c.get("body_html", "")]
+    ours = [c for c in json.loads(body) if "mergeproof-report" in c.get("body", "")]
     if not ours:
         sys.exit(f"no mergeproof comment on #{pr}")
     page = COMMENT_PAGE.format(css=MARKDOWN_CSS, avatar=AVATAR, body=ours[-1]["body_html"])
@@ -131,9 +132,9 @@ def explain(example: str, scenario: str, height: int = 740) -> None:
 
 if __name__ == "__main__":
     args = sys.argv[1:]
-    if args[:1] == ["comment"] and len(args) == 2:
-        comment(args[1])
-    elif args[:1] == ["explain"] and len(args) == 3:
-        explain(args[1], args[2])
+    if args[:1] == ["comment"] and len(args) in (2, 3):
+        comment(args[1], *map(int, args[2:]))
+    elif args[:1] == ["explain"] and len(args) in (3, 4):
+        explain(args[1], args[2], *map(int, args[3:]))
     else:
         sys.exit(__doc__)
