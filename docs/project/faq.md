@@ -2,7 +2,7 @@
 
 ## The merge box says "Expected — waiting for status to be reported"
 
-The required context is not being produced. Check that the workflow ran on this PR (bot-authored
+Run `mergeproof doctor` first; it catches the usual causes. The required context is not being produced. Check that the workflow ran on this PR (bot-authored
 PRs opened with the workflow token do not trigger CI until reopened) and that `status: "true"` is
 in effect, and that the ruleset requires the **status** context `mergeproof`, not a check run.
 
