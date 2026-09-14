@@ -363,3 +363,43 @@ def test_validate_lists_rule_sources_for_inherited_policies(tmp_path, capsys):
     assert run("validate", "-p", tmp_path / "mergeproof.yaml") == 0
     out = capsys.readouterr().out
     assert "inherited  path:base.yaml" in out and "local      this file" in out
+
+
+SHELLY = """\
+rules:
+  - id: src
+    when: { paths: ["src/**"] }
+    require:
+      - check: tests.changed
+        with: { any_of: ["tests/**"] }
+      - check: shell
+        name: lint passes
+        with: { run: "make lint" }
+  - id: docs
+    when: { paths: ["docs/**"] }
+    require:
+      - check: files.changed
+        with: { any_of: ["docs/**"] }
+"""
+
+
+def test_validate_notes_shell_requirements(tmp_path, capsys):
+    (tmp_path / "p.yaml").write_text(SHELLY)
+    assert run("validate", "-p", tmp_path / "p.yaml") == 0
+    out = capsys.readouterr().out
+    assert "note: rule 'src' / 'lint passes' runs a shell command" in out
+    (tmp_path / "clean.yaml").write_text(POLICY)
+    assert run("validate", "-p", tmp_path / "clean.yaml") == 0
+    assert "note:" not in capsys.readouterr().out
+
+
+def test_checks_usage_counts_checks_and_lists_shell_commands(tmp_path, capsys):
+    (tmp_path / "p.yaml").write_text(SHELLY)
+    assert run("checks", "--usage", "-p", tmp_path / "p.yaml") == 0
+    out = capsys.readouterr().out
+    assert "2 rule(s), 3 requirement(s)" in out
+    assert out.index("files.changed") < out.index("tests.changed"), "ties sort by name"
+    assert "shell commands:\n  src / lint passes: make lint" in out
+    assert run("checks") == 0
+    listing = capsys.readouterr().out
+    assert "tests.changed" in listing and "shell commands" not in listing

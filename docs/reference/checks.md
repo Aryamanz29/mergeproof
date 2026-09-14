@@ -115,3 +115,9 @@ Runs `run` from the policy with `cwd`, `timeout`, `env`; exit 0 passes. The chan
 `MERGEPROOF_FILES`, the commit in `MERGEPROOF_HEAD_SHA`, the base branch in `MERGEPROOF_BASE_REF`.
 Pull request content is never interpolated into the command. Not available when there is no
 checkout.
+
+`shell` is the escape hatch: it cannot explain itself to an agent, its output is whatever the
+script printed, and it runs in the checkout of the base branch, not of the pull request. Use it to
+try an idea, then read [when a shell check should become a plugin](../extending/plugins.md#when-a-shell-check-should-become-a-plugin).
+`mergeproof validate` notes every `shell` requirement; `mergeproof checks --usage` lists their
+commands.

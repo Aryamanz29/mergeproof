@@ -46,6 +46,78 @@ messages that become job annotations and review comments). `explain` is what age
 "image.smoke_tested" = "mypkg.checks:ImageSmokeTested"
 ```
 
+## When a shell check should become a plugin
+
+`shell` is for trying an idea in an afternoon. It stops being the right tool when any of these is
+true:
+
+- **The command encodes a rule someone else could reuse.** Two repositories running the same
+  script have a plugin waiting to be written.
+- **An agent needs to satisfy it.** `shell` explains itself as "`the command` exits 0"; a check
+  explains what to change and where, in one sentence the agent can act on.
+- **It reads the pull request.** The command runs in the checkout of the *base* branch and only
+  sees the changed paths through `MERGEPROOF_FILES`; a check gets the whole `Context` (files with
+  status, description, evidence block, comments, reviews, check runs, repository tree).
+- **The result should carry evidence.** A check returns `details`, `data` and annotations that
+  reach the comment, the review comments and the receipt; a script returns an exit code.
+
+`mergeproof validate` prints a note for every `shell` requirement and `mergeproof checks --usage
+-p mergeproof.yaml` lists their commands, so the escape hatch stays visible.
+
+The plugin is small. A check class:
+
+```python
+# mypkg/checks.py
+from pydantic import BaseModel, ConfigDict, Field
+
+from mergeproof import Check, Context, Outcome
+from mergeproof.checks.base import fail, ok
+
+
+class BaselineUpdated(Check):
+    id = "tools.baseline"
+    description = "A tool schema change comes with a regenerated baseline file."
+
+    class Params(BaseModel):
+        model_config = ConfigDict(extra="forbid")
+
+        baseline: str = Field(default="tests/baselines/tool_surface.json")
+
+    def run(self, ctx: Context, params: Params, files: list[str]) -> Outcome:
+        if any(f.path == params.baseline for f in ctx.files):
+            return ok(f"{params.baseline} updated")
+        return fail(f"{params.baseline} unchanged", fix=self.explain(params))
+
+    def explain(self, params: Params) -> str:
+        return f"Regenerate `{params.baseline}` when a tool's schema changes and commit it."
+```
+
+An entry point, so the policy can name it:
+
+```toml
+[project.entry-points."mergeproof.checks"]
+"tools.baseline" = "mypkg.checks:BaselineUpdated"
+```
+
+And a test that drives it with a `Context`, the way `tests/unit/test_checks.py` does for the
+built-ins:
+
+```python
+from mergeproof.context import ChangedFile, Context
+from mypkg.checks import BaselineUpdated
+
+
+def test_baseline_must_change():
+    check = BaselineUpdated()
+    params = check.parse_params({})
+    ctx = Context(files=[ChangedFile(path="tools/search.py")])
+    assert check.run(ctx, params, ["tools/search.py"]).status == "fail"
+```
+
+Install the package next to mergeproof (the action's `plugins` input) and the policy says
+`check: tools.baseline`. The two plugins under `examples/plugins/` are complete examples with
+packaging and tests.
+
 ## A verifier
 
 A verifier resolves a link from `evidence.links` to an answer with provenance. It is a class

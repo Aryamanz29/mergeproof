@@ -368,6 +368,13 @@ def cmd_comment(args: argparse.Namespace) -> int:
     return 0
 
 
+SHELL_NOTE = "runs a shell command; a built-in or plugin check explains itself to agents, see docs/extending/plugins.md"
+
+
+def shell_requirements(pol: policy.Policy) -> list[tuple[policy.Rule, policy.Requirement]]:
+    return [(rule, req) for rule in pol.rules for req in rule.require if req.check == "shell"]
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     pol = load_policy(args, load_registry())
     print(f"{args.policy}: ok")
@@ -375,6 +382,8 @@ def cmd_validate(args: argparse.Namespace) -> int:
         width = max(len(r.id) for r in pol.rules)
         for rule in pol.rules:
             print(f"  {rule.id.ljust(width)}  {rule.source or 'this file'}")
+    for rule, req in shell_requirements(pol):
+        print(f"  note: rule {rule.id!r} / {req.label!r} {SHELL_NOTE}")
     return 0
 
 
@@ -388,6 +397,8 @@ def cmd_init(args: argparse.Namespace) -> int:
 
 
 def cmd_checks(args: argparse.Namespace) -> int:
+    if args.usage:
+        return checks_usage(args)
     for check_id, cls in load_registry().items():
         print(check_id + ("  (GitHub mode only)" if cls.needs_github else ""))
         print(f"    {cls.description}")
@@ -400,6 +411,26 @@ def cmd_checks(args: argparse.Namespace) -> int:
                 default = f" (default {field.default!r})"
             note = f": {field.description}" if field.description else ""
             print(f"      {name}{default}{note}")
+    return 0
+
+
+def checks_usage(args: argparse.Namespace) -> int:
+    """Which checks a policy leans on, and every shell command it runs."""
+    pol = load_policy(args, load_registry())
+    counts: dict[str, int] = {}
+    for rule in pol.rules:
+        for req in rule.require:
+            counts[req.check] = counts.get(req.check, 0) + 1
+    width = max(len(c) for c in counts)
+    print(f"{args.policy}: {len(pol.rules)} rule(s), {sum(counts.values())} requirement(s)")
+    for check_id, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])):
+        print(f"  {n:>3}  {check_id.ljust(width)}")
+    shells = shell_requirements(pol)
+    if shells:
+        print("shell commands:")
+        for rule, req in shells:
+            print(f"  {rule.id} / {req.label}: {req.params.get('run', '')}")
+        print(f"  {SHELL_NOTE}")
     return 0
 
 
@@ -493,6 +524,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_init)
 
     p = sub.add_parser("checks", help="list available checks and their parameters")
+    p.add_argument(
+        "--usage", action="store_true", help="instead, count the checks a policy uses and list its shell commands"
+    )
+    add_policy_arg(p)
     p.set_defaults(func=cmd_checks)
 
     p = sub.add_parser("agent-prompt", help="render a CLAUDE.md / AGENTS.md section from the policy")
