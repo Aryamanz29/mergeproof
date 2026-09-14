@@ -32,22 +32,32 @@ def make_report():
     return pol, registry, engine.evaluate(pol, ctx, registry)
 
 
-def test_markdown_comment_reads_like_a_product():
+def test_markdown_comment_is_a_scorecard():
     _, _, report = make_report()
     report.repo, report.base_ref, report.head_sha = "o/r", "main", "abc1234def5678"
     text = render.report_markdown(report, run_url="https://run/1")
     assert text.startswith(render.MARKER)
-    assert "**mergeproof**" in text and "img.shields.io/badge/evidence-0%2F2-cf222e" in text
+    first = text.splitlines()[1]
+    assert first.startswith("![mergeproof: 0 / 2](https://img.shields.io/badge/mergeproof-0%20%2F%202-cf222e")
+    assert "logo=data:image/svg+xml;base64," in first
+    assert "![needs evidence: 0 / 2](https://img.shields.io/badge/needs%20evidence-0%20%2F%202-cf222e" in first
+    assert (
+        "**0 of 2 requirements satisfied** for [`abc1234`](https://github.com/o/r/commit/abc1234def5678). To merge:"
+        in text
+    )
+    assert "| Needed | What to do |" in text
+    assert (
+        "| ![Missing](https://img.shields.io/badge/Missing-cf222e" in text
+        and "evidence.field<br><sub>needs-evidence</sub> |" in text
+    )
+    assert "<sub>**needs-evidence**: Reproduce on staging.</sub>" in text
+    assert (
+        "**Evidence template**, to paste into the PR description:" in text
+        and "```evidence\nenvironment: staging\n```" in text
+    )
+    assert "**Everything else**" in text and "| ![Warning](https://img.shields.io/badge/Warning-dbab09" in text
+    assert "<details>" not in text
     assert "[policy](https://github.com/o/r/blob/main/mergeproof.yaml)" in text and "[details](https://run/1)" in text
-    sentence = "**2 of 2 requirements need attention** for [`abc1234`](https://github.com/o/r/commit/abc1234def5678)"
-    assert f"{sentence}: 1 missing, 1 warning." in text
-    assert "| Rule | Requirement | Status | Detail |" in text
-    assert "| `needs-evidence` | evidence.field | **Missing** |" in text
-    assert "|  | pr.labels <sub>warn only</sub> | Warning |" in text
-    assert "**Next steps**" in text and "1. **evidence.field**:" in text
-    assert "`needs-evidence` <sub>Reproduce on staging.</sub>" in text and "Use the staging tenant." in text
-    assert "<details><summary>Evidence template</summary>" in text and "```evidence\nenvironment: staging\n```" in text
-    assert "Updated " in text
     for icon in render.markdown.ICON.values():
         assert icon not in text
     assert render.MARKER not in render.report_markdown(report, marker=False)
@@ -92,12 +102,13 @@ def test_all_satisfied_and_no_rules_variants():
     registry = builtin_registry()
     report = engine.evaluate(pol, make_context(files=["a.py"]), registry)
     text = render.report_markdown(report)
-    assert "**All 1 requirements are satisfied**" in text and "Next steps" not in text and "<details>" not in text
-    assert "evidence-1%2F1-2ea043" in text
+    assert "**All 1 requirements satisfied**" in text and "To merge" not in text
+    assert "![ok: 1 / 1](https://img.shields.io/badge/ok-1%20%2F%201-2ea043" in text
+    assert "| ![Satisfied](https://img.shields.io/badge/Satisfied-2ea043" in text
     empty = engine.evaluate(pol, make_context(files=[]), registry)
     empty.rules[0].matched = False
     text = render.report_markdown(empty, marker=False)
-    assert text.endswith("No rules apply to this change.") and "evidence-no%20rules" in text
+    assert "No rules apply to this change." in text and "no%20rules%20apply" in text
 
 
 def test_next_steps_skip_unactionable_pending_and_state_rule_instructions_once():
@@ -122,7 +133,8 @@ def test_next_steps_skip_unactionable_pending_and_state_rule_instructions_once()
         pol, make_context(files=["x"], check_runs=[CheckRun(name="unit", status="in_progress")]), builtin_registry()
     )
     text = render.report_markdown(report)
-    steps = [line for line in text.splitlines() if line[:2] in ("1.", "2.", "3.")]
+    needed = text.split("| Needed | What to do |", 1)[1].split("**Everything else**", 1)[0]
+    steps = [line for line in needed.splitlines() if line.startswith("| ![")]
     assert len(steps) == 3 and "ci.job_passed" not in "".join(steps)
     assert text.count("Do the live thing.") == 1
 
@@ -200,7 +212,7 @@ def test_workflow_commands_annotate_files_and_state_the_verdict():
         "::error file=src/a%3Ab.py,line=1,title=mergeproof%3A tests.changed::expected a changed test"
     )
     assert lines[1].startswith("::warning file=src/a%3Ab.py,line=1,title=mergeproof%3A docs tests::")
-    assert lines[-1] == "::error title=mergeproof::0 of 2 requirements satisfied, 2 fail"
+    assert lines[-1] == "::error title=mergeproof::0 of 2 requirements satisfied, 1 missing, 1 warning"
 
 
 def test_nothing_is_emitted_when_everything_passes():

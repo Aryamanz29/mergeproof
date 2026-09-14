@@ -119,8 +119,7 @@ def test_no_rules_apply(pol, registry):
 
 def test_headline_counts_and_annotations(pol, registry):
     report = engine.evaluate(pol, make_context(files=["app/tools/lineage.py"]), registry)
-    assert report.headline().startswith("0 of 5 requirements satisfied")
-    assert "1 pending" in report.headline() and "fail" in report.headline()
+    assert report.headline() == "0 of 5 requirements satisfied, 3 missing, 1 pending, 1 warning"
     notes = report.annotations()
     assert notes and notes[0].path == "app/tools/lineage.py" and "test_lineage" in notes[0].message
     empty = engine.evaluate(pol, make_context(files=["README.md"], title="docs"), registry)

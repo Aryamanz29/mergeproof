@@ -17,6 +17,9 @@ inputs:
   comment:
     description: Create or update the sticky PR comment
     default: "true"
+  review-comments:
+    description: Post what is still needed as review comments on the files concerned, kept in sync on every run
+    default: "true"
   status:
     description: Set the `mergeproof` commit status (needs statuses:write). This is the row to require; it is re-evaluated correctly on re-runs of the same commit
     default: "true"
@@ -59,6 +62,7 @@ runs:
       run: |
         args=(check --github --policy "${{ inputs.policy }}" --output mergeproof-report.json)
         [ "${{ inputs.comment }}" = "true" ] && args+=(--comment)
+        [ "${{ inputs.review-comments }}" = "true" ] && args+=(--review-comments)
         [ "${{ inputs.status }}" = "true" ] && args+=(--status)
         [ "${{ inputs.check-run }}" = "true" ] && args+=(--check-run)
         set +e

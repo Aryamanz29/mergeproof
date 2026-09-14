@@ -22,7 +22,7 @@ def test_context_check_report_pipeline(sample_repo: Path):
     )
     proc = subprocess.run(["sh", "-c", pipeline], cwd=sample_repo, capture_output=True, text=True)
     assert proc.returncode == 1, proc.stderr
-    assert "need attention" in proc.stdout and "```evidence" in proc.stdout
+    assert "To merge:" in proc.stdout and "```evidence" in proc.stdout
 
 
 def test_template_then_check_passes(sample_repo: Path):

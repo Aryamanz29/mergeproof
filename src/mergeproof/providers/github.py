@@ -9,7 +9,7 @@ from typing import Any
 import httpx
 
 from mergeproof.context import ChangedFile, CheckRun, Comment, Context, ContextError
-from mergeproof.report import Annotation, Status
+from mergeproof.report import Annotation, Report, Status
 
 API_URL = "https://api.github.com"
 
@@ -52,6 +52,10 @@ class Client:
         response = self._http.patch(path, json=payload)
         response.raise_for_status()
         return response.json()
+
+    def delete(self, path: str) -> None:
+        response = self._http.delete(path)
+        response.raise_for_status()
 
 
 def client_from_env() -> Client:
@@ -254,3 +258,68 @@ def create_check_run(
 def run_url() -> str | None:
     server, repo, run_id = (os.environ.get(k) for k in ("GITHUB_SERVER_URL", "GITHUB_REPOSITORY", "GITHUB_RUN_ID"))
     return f"{server}/{repo}/actions/runs/{run_id}" if server and repo and run_id else None
+
+
+REVIEW_MARKER = "<!-- mergeproof-review:{key} -->"
+
+
+def review_comment_bodies(report: Report, cap: int = 20) -> dict[tuple[str, str], str]:
+    """File-level review comments for what is still needed, keyed by (path, key).
+
+    A finding that names a file (a missing test for it) goes on that file. A requirement that
+    applies to the whole change goes on the first file that made its rule apply, once per rule,
+    so the reader sees it where they are looking.
+    """
+    from mergeproof.policy import Severity
+
+    bodies: dict[tuple[str, str], str] = {}
+    for rule, req in report.blocking_unmet():
+        if req.effective == Status.PENDING and not req.outcome.fix:
+            continue
+        strength = "blocking" if req.severity == Severity.BLOCK else "warning"
+        heading = f"**mergeproof · {req.label}** <sub>rule `{rule.id}`, {strength}</sub>"
+        fix = req.outcome.fix or req.outcome.summary
+        note = f"\n\n<sub>{rule.instructions.strip()}</sub>" if rule.instructions else ""
+        if req.outcome.annotations:
+            for ann in req.outcome.annotations:
+                key = f"{rule.id}:{req.label}:{ann.path}"
+                bodies[(ann.path, key)] = f"{REVIEW_MARKER.format(key=key)}\n{heading}\n\n{ann.message}\n\n{fix}{note}"
+        elif rule.files:
+            key = f"{rule.id}:{req.label}"
+            files = ", ".join(f"`{f}`" for f in rule.files[:3]) + (
+                f" and {len(rule.files) - 3} more" if len(rule.files) > 3 else ""
+            )
+            why = f"This rule applies because the change touches {files}."
+            body = f"{REVIEW_MARKER.format(key=key)}\n{heading}\n\n{req.outcome.summary}. {why}\n\n{fix}{note}"
+            bodies[(rule.files[0], key)] = body
+        if len(bodies) >= cap:
+            break
+    return bodies
+
+
+def sync_review_comments(client: Client, report: Report, bodies: dict[tuple[str, str], str]) -> dict[str, int]:
+    """Create, update or delete mergeproof's file-level review comments so they mirror *bodies*."""
+    assert report.repo and report.number is not None and report.head_sha
+    existing: dict[str, dict[str, Any]] = {}
+    for comment in client.paginate(f"/repos/{report.repo}/pulls/{report.number}/comments"):
+        text = comment.get("body") or ""
+        if "<!-- mergeproof-review:" in text:
+            key = text.split("<!-- mergeproof-review:", 1)[1].split(" -->", 1)[0]
+            existing[key] = comment
+    counts = {"created": 0, "updated": 0, "deleted": 0}
+    wanted = {key: (path, body) for (path, key), body in bodies.items()}
+    for key, (path, body) in wanted.items():
+        current = existing.pop(key, None)
+        if current is None:
+            client.post(
+                f"/repos/{report.repo}/pulls/{report.number}/comments",
+                {"body": body, "commit_id": report.head_sha, "path": path, "subject_type": "file"},
+            )
+            counts["created"] += 1
+        elif current.get("body") != body:
+            client.patch(f"/repos/{report.repo}/pulls/comments/{current['id']}", {"body": body})
+            counts["updated"] += 1
+    for stale in existing.values():
+        client.delete(f"/repos/{report.repo}/pulls/comments/{stale['id']}")
+        counts["deleted"] += 1
+    return counts
