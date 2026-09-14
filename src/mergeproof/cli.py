@@ -185,7 +185,7 @@ def cmd_check(args: argparse.Namespace) -> int:
 def publish(
     report: Report, comment: bool = True, status: bool = False, check_run: bool = False, review_comments: bool = False
 ) -> None:
-    """Report back to GitHub: the sticky comment, the commit status line, the Check Run with annotations."""
+    """Report back to GitHub: the sticky comment, the commit status, the Check Run, review comments on files."""
     if report.source != "github" or not report.repo or report.number is None or not report.head_sha:
         print("mergeproof: publishing needs a GitHub context; skipping", file=sys.stderr)
         return
@@ -222,6 +222,10 @@ def publish(
         if status:
             github.set_commit_status(client, report.repo, report.head_sha, report.verdict, report.headline(), link)
             print(f"mergeproof: commit status {github.STATUS_STATE[report.verdict]}", file=sys.stderr)
+        if review_comments:
+            counts = github.sync_review_comments(client, report, github.review_comment_bodies(report))
+            summary = ", ".join(f"{n} {what}" for what, n in counts.items() if n) or "unchanged"
+            print(f"mergeproof: review comments {summary}", file=sys.stderr)
     except (ContextError, httpx.HTTPError) as exc:
         die(f"could not publish the report: {exc}")
 
