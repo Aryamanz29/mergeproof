@@ -40,7 +40,7 @@ Contexts and reports are plain JSON, so the stages compose:
 mergeproof context --github > pr.json                 # snapshot a PR
 mergeproof check --context pr.json -f json > report.json
 mergeproof report report.json -f md                   # render later, elsewhere
-mergeproof comment report.json --status --check-run   # post it
+mergeproof comment report.json --status               # post it
 ```
 
 Snapshots make policies testable: the examples ship scenario files that the integration suite runs

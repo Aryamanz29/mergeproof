@@ -16,7 +16,6 @@
 | `comment` | `true` | create or update the sticky comment |
 | `review-comments` | `true` | post what is still needed as review comments on the files concerned, kept in sync |
 | `status` | `true` | set the `mergeproof` commit status; the context to require |
-| `check-run` | `false` | also create a Check Run |
 | `pending-ok` | `false` | let the job succeed while evidence is pending; the status still says pending |
 | `github-token` | `${{ github.token }}` | token used for every channel |
 
@@ -39,7 +38,6 @@ All four files are uploaded as the `mergeproof-report` artifact.
 | `pull-requests: write` | the comment and review comments |
 | `statuses: write` | the commit status |
 | `checks: read` | `ci.job_passed` reading other jobs' results |
-| `checks: write` | only with `check-run: "true"` |
 
 ## Events
 

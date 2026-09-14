@@ -7,7 +7,7 @@ import respx
 
 from mergeproof.context import Context, ContextError
 from mergeproof.providers import git, github
-from mergeproof.report import Annotation, Status
+from mergeproof.report import Status
 
 
 def sh(cwd, *args):
@@ -200,39 +200,15 @@ def test_step_summary_and_output_files(tmp_path, monkeypatch):
 
 
 @respx.mock
-def test_commit_status_and_check_run_payloads():
+def test_commit_status_payload():
     api = "https://api.github.com"
     status = respx.post(f"{api}/repos/o/r/statuses/abc").mock(return_value=httpx.Response(201, json={}))
-    check = respx.post(f"{api}/repos/o/r/check-runs").mock(
-        return_value=httpx.Response(201, json={"html_url": "https://c/1"})
-    )
     client = github.Client("tok")
     github.set_commit_status(client, "o/r", "abc", Status.PENDING, "x" * 200, "https://run")
     sent = json.loads(status.calls[0].request.content)
     assert sent["state"] == "pending" and sent["context"] == "mergeproof"
-    assert sent["description"] == "x" * 140  # the status API rejects emoji; the mark lives on the Check Run
+    assert sent["description"] == "x" * 140  # the API caps descriptions and rejects emoji
     assert sent["target_url"] == "https://run"
-
-    notes = [Annotation(path="src/a.py", message="expected a test")]
-    url = github.create_check_run(client, "o/r", "abc", Status.FAIL, "0 of 1", "## summary", notes, "https://run")
-    assert url == "https://c/1"
-    sent = json.loads(check.calls[0].request.content)
-    assert sent["conclusion"] == "failure" and sent["name"] == "mergeproof" and sent["details_url"] == "https://run"
-    assert sent["output"]["title"] == "🛡️ 0 of 1"
-    note = sent["output"]["annotations"][0]
-    assert note == {
-        "path": "src/a.py",
-        "start_line": 1,
-        "end_line": 1,
-        "annotation_level": "failure",
-        "message": "expected a test",
-    }
-    for verdict, conclusion in (
-        (Status.PASS, "success"),
-        (Status.WARN, "neutral"),
-        (Status.PENDING, "action_required"),
-    ):
-        assert github.CHECK_CONCLUSION[verdict] == conclusion
 
 
 def test_run_url(monkeypatch):

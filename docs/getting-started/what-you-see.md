@@ -29,10 +29,8 @@ A status named `mergeproof` in the merge box: `4 of 5 requirements satisfied, 1 
 the context to require in branch protection. It is `pending` while evidence is outstanding,
 `failure` when something is missing, `success` otherwise, and it links to the comment.
 
-Statuses are used rather than check runs on purpose: GitHub evaluates required check runs against
-the newest check suite on a commit, and a check run created through the API stays attached to the
-first suite, so re-runs and bot-authored PRs could leave the merge box waiting for a check that had
-passed. Statuses have no such affinity.
+It is a status rather than a check run on purpose: statuses have no check-suite affinity, so a
+re-run, a reopen or a bot-authored PR all update it correctly. The FAQ has the longer story.
 
 ## Review comments on files
 

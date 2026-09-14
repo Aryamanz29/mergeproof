@@ -9,7 +9,7 @@ from typing import Any
 import httpx
 
 from mergeproof.context import ChangedFile, CheckRun, Comment, Context, ContextError
-from mergeproof.report import Annotation, Report, Status
+from mergeproof.report import Report, Status
 
 API_URL = "https://api.github.com"
 
@@ -186,23 +186,6 @@ def write_output(name: str, value: str) -> None:
 
 
 STATUS_STATE = {Status.PASS: "success", Status.WARN: "success", Status.PENDING: "pending", Status.FAIL: "failure"}
-MARK = "🛡️"
-
-
-def titled(text: str) -> str:
-    """The headline on the Check Run row, carrying the mark whatever token posted it.
-
-    Only the Check Run gets it: the commit status API rejects descriptions containing emoji.
-    """
-    return f"{MARK} {text}"
-
-
-CHECK_CONCLUSION = {
-    Status.PASS: "success",
-    Status.WARN: "neutral",
-    Status.PENDING: "action_required",
-    Status.FAIL: "failure",
-}
 
 
 def set_commit_status(
@@ -217,43 +200,6 @@ def set_commit_status(
     if target_url:
         payload["target_url"] = target_url
     client.post(f"/repos/{repo}/statuses/{sha}", payload)
-
-
-def create_check_run(
-    client: Client,
-    repo: str,
-    sha: str,
-    verdict: Status,
-    title: str,
-    summary: str,
-    annotations: list[Annotation],
-    details_url: str | None = None,
-) -> str:
-    """A Check Run with file annotations, shown in the Checks tab and inline in the diff."""
-    payload: dict[str, Any] = {
-        "name": "mergeproof",
-        "head_sha": sha,
-        "status": "completed",
-        "conclusion": CHECK_CONCLUSION[verdict],
-        "output": {
-            "title": titled(title)[:255],
-            "summary": summary[:65535],
-            "annotations": [
-                {
-                    "path": a.path,
-                    "start_line": a.line,
-                    "end_line": a.line,
-                    "annotation_level": "failure" if verdict == Status.FAIL else "warning",
-                    "message": a.message[:64000],
-                }
-                for a in annotations[:50]
-            ],
-        },
-    }
-    if details_url:
-        payload["details_url"] = details_url
-    created = client.post(f"/repos/{repo}/check-runs", payload)
-    return str(created.get("html_url", ""))
 
 
 def run_url() -> str | None:
