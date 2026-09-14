@@ -154,6 +154,7 @@ def test_command_surface_is_the_documented_one(capsys):
         "checks",
         "agent-prompt",
         "receipt",
+        "replay",
     }
     assert "mcp" not in commands
 
@@ -307,3 +308,45 @@ def test_receipt_command_prints_a_summary(monkeypatch, capsys):
     monkeypatch.setattr(receipt, "read", lambda *a: (_ for _ in ()).throw(LookupError("no receipt for ccccccc")))
     assert run("receipt", "#7") == 1
     assert "no receipt" in capsys.readouterr().err
+
+
+def test_replay_command_runs_read_only(tmp_path, monkeypatch, capsys):
+    import base64
+
+    from mergeproof import replay
+    from mergeproof.context import ChangedFile, Context
+
+    (tmp_path / "candidate.yaml").write_text(POLICY)
+    monkeypatch.setenv("GITHUB_REPOSITORY", "o/r")
+    monkeypatch.setattr(github, "client_from_env", lambda: object())
+
+    never = "rules:\n  - id: never\n    when: { paths: ['never/**'] }\n    require: [{ check: files.changed }]\n"
+
+    class Client:
+        def get(self, path, **params):
+            if path == "/repos/o/r":
+                return {"default_branch": "main"}
+            if path.endswith("/contents/mergeproof.yaml"):
+                return {"content": base64.b64encode(never.encode()).decode()}
+            raise AssertionError(path)
+
+    monkeypatch.setattr(github, "client_from_env", lambda: Client())
+    monkeypatch.setattr(
+        replay,
+        "merged_pulls",
+        lambda client, repo, last, since: [{"number": 9, "title": "t", "merged_at": "2026-09-09T00:00:00Z"}],
+    )
+    ctx = Context(
+        source="github", online=True, repo="o/r", number=9, head_sha="a" * 40, files=[ChangedFile(path="src/a.py")]
+    )
+    monkeypatch.setattr(replay, "fetch", lambda client, repo, number: ctx)
+
+    code = run("replay", "-p", tmp_path / "candidate.yaml", "--against", "current", "--save", tmp_path / "s", "-q")
+    out, err = capsys.readouterr()
+    assert code == 0 and "#9  2026-09-09  fail" in out and "(was pass)" in out
+    assert "1 scenario files" in err and (tmp_path / "s" / "pr-9.json").exists()
+    assert run("replay", "-p", tmp_path / "candidate.yaml", "--fail-on-block", "-q", "-f", "json") == 1
+    assert json.loads(capsys.readouterr().out)[0]["verdict"] == "fail"
+
+    monkeypatch.delenv("GITHUB_REPOSITORY")
+    assert run("replay", "-p", tmp_path / "candidate.yaml") == 3

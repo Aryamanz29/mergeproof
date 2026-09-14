@@ -21,8 +21,39 @@ they nudge without stopping a hotfix.
 ## 3. Grow the policy from evidence
 
 Add a rule when a class of regression slips through, and say in its `description` what it caught.
-Remove or soften a rule that only ever produces noise. `mergeproof explain` on old branches is a
-cheap way to see what a new rule would have flagged.
+Remove or soften a rule that only ever produces noise.
+
+## Replay before you tighten
+
+"Will this rule annoy people" has a factual answer. `replay` rebuilds the context of pull requests
+that already merged, evaluates a policy against each, and says what would have been blocked:
+
+```sh
+GITHUB_TOKEN=$(gh auth token) mergeproof replay --policy mergeproof.yaml --last 50 --repo OWNER/NAME
+```
+
+```
+ #128  2026-09-14  pass     feat(search): paginate results
+ #127  2026-09-13  fail     fix(tools): empty query no longer raises
+       needs  fix-or-feature-has-live-evidence · before/after traces
+ #126  2026-09-13  pass     docs: rollout guide
+ ...
+50 merged pull requests in OWNER/NAME; the policy applied to 31 and would have blocked 9
+most common blockers:
+    7  fix-or-feature-has-live-evidence · before/after traces
+    2  tool-change-has-integration-tests · integration tests touched
+```
+
+`--against current` evaluates the policy on the default branch as well and marks the verdicts
+that change, so a proposed tightening shows only what it adds. `--since 2026-08-01` bounds by
+date, `-f json` is for scripts, and `--fail-on-block` makes it usable as a CI check on policy PRs.
+
+Replay is read-only. It needs a token that can read the repository; nothing is posted. Checks
+that call out, such as verified links, run for real, so an old trace that has since expired shows
+as unverified, which is itself worth knowing.
+
+`--save scenarios/` writes one file per pull request in the shape the examples use, so the cases
+that mattered become fixtures the test suite runs forever.
 
 ## What to require in the first policy
 
