@@ -1,0 +1,150 @@
+{
+  "receipt": {
+    "evaluated_at": "2026-09-14 20:07 UTC",
+    "format": 1,
+    "head_sha": "bbbd5e5dbc4bc64ed12b758f8be857192b79abbb",
+    "headline": "4 of 4 requirements satisfied",
+    "merge_commit_sha": "3160ccd8cf88951fc206e44a1ed25d9fc31b25d4",
+    "merged_at": "2026-09-14T20:07:15Z",
+    "merged_by": "Aryamanz29",
+    "mergeproof": "0.6.0",
+    "policy": "mergeproof.yaml",
+    "policy_sha256": "1f7bc6e21f6bb6b5b5984c89c7c42b33be83033dc256c3d154b7504ba5fdb0c2",
+    "pull_request": 63,
+    "repo": "Aryamanz29/mergeproof",
+    "run_url": "https://github.com/Aryamanz29/mergeproof/actions/runs/34890988309",
+    "verdict": "pass"
+  },
+  "report": {
+    "base_ref": "main",
+    "evaluated_at": "2026-09-14 20:07 UTC",
+    "evidence_block": "evidence",
+    "head_sha": "bbbd5e5dbc4bc64ed12b758f8be857192b79abbb",
+    "merge_commit_sha": "3160ccd8cf88951fc206e44a1ed25d9fc31b25d4",
+    "merged": true,
+    "merged_at": "2026-09-14T20:07:15Z",
+    "merged_by": "Aryamanz29",
+    "number": 63,
+    "policy_path": "mergeproof.yaml",
+    "policy_sha256": "1f7bc6e21f6bb6b5b5984c89c7c42b33be83033dc256c3d154b7504ba5fdb0c2",
+    "project": "mergeproof",
+    "repo": "Aryamanz29/mergeproof",
+    "rules": [
+      {
+        "description": "Lint, the unit matrix and the integration suite pass on the head commit. The `mergeproof` status is the only required check; this rule is what makes it stand for CI as a whole.",
+        "files": [
+          "README.md",
+          "docs/getting-started/quickstart.md"
+        ],
+        "id": "ci-green",
+        "instructions": null,
+        "matched": true,
+        "requirements": [
+          {
+            "check": "ci.job_passed",
+            "evidence_template": {},
+            "instructions": null,
+            "label": "lint",
+            "outcome": {
+              "annotations": [],
+              "data": {},
+              "details": [
+                "lint"
+              ],
+              "fix": null,
+              "status": "pass",
+              "summary": "1 run succeeded"
+            },
+            "severity": "block"
+          },
+          {
+            "check": "ci.job_passed",
+            "evidence_template": {},
+            "instructions": null,
+            "label": "unit tests on every Python",
+            "outcome": {
+              "annotations": [],
+              "data": {},
+              "details": [
+                "unit (3.12)",
+                "unit (3.11)",
+                "unit (3.13)"
+              ],
+              "fix": null,
+              "status": "pass",
+              "summary": "3 runs succeeded"
+            },
+            "severity": "block"
+          },
+          {
+            "check": "ci.job_passed",
+            "evidence_template": {},
+            "instructions": null,
+            "label": "integration",
+            "outcome": {
+              "annotations": [],
+              "data": {},
+              "details": [
+                "integration"
+              ],
+              "fix": null,
+              "status": "pass",
+              "summary": "1 run succeeded"
+            },
+            "severity": "block"
+          },
+          {
+            "check": "ci.job_passed",
+            "evidence_template": {},
+            "instructions": null,
+            "label": "docker image",
+            "outcome": {
+              "annotations": [],
+              "data": {},
+              "details": [
+                "docker image"
+              ],
+              "fix": null,
+              "status": "pass",
+              "summary": "1 run succeeded"
+            },
+            "severity": "block"
+          }
+        ],
+        "severity": "block",
+        "source": ""
+      },
+      {
+        "description": "A change to a module ships with a change to its tests.",
+        "files": [],
+        "id": "source-needs-tests",
+        "instructions": null,
+        "matched": false,
+        "requirements": [],
+        "severity": "block",
+        "source": ""
+      },
+      {
+        "description": "A changed example policy keeps or updates its scenarios.",
+        "files": [],
+        "id": "examples-stay-runnable",
+        "instructions": null,
+        "matched": false,
+        "requirements": [],
+        "severity": "block",
+        "source": ""
+      },
+      {
+        "description": "The changelog is generated from commit subjects, so a PR title that is not Conventional Commits will not appear in it.",
+        "files": [],
+        "id": "conventional-title",
+        "instructions": null,
+        "matched": false,
+        "requirements": [],
+        "severity": "warn",
+        "source": ""
+      }
+    ],
+    "source": "github"
+  }
+}
