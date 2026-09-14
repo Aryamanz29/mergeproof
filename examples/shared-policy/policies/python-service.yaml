@@ -1,0 +1,33 @@
+# A base policy an organisation keeps in one place and every Python service extends.
+# Pin it from other repositories: github:acme/policies/python-service.yaml@v1
+version: 1
+rules:
+  - id: source-needs-tests
+    description: Source changes ship with tests for the touched module.
+    when:
+      paths: ["src/**/*.py"]
+    require:
+      - check: tests.changed
+        name: tests for touched modules
+        with: { map: { "src/{pkg}/{name}.py": "tests/**/test_{name}*.py" } }
+      - check: ci.job_passed
+        name: unit tests green
+        with: { name: "^unit", regex: true }
+
+  - id: migrations-need-rollback
+    description: A database migration says how to roll it back.
+    when:
+      paths: ["migrations/**"]
+    require:
+      - check: evidence.field
+        with: { key: rollback, matches: ".{20,}" }
+
+  - id: changelog
+    description: User-visible changes are recorded in the changelog.
+    severity: warn
+    when:
+      paths: ["src/**"]
+    require:
+      - check: files.changed
+        name: changelog updated
+        with: { any_of: ["CHANGELOG.md"] }

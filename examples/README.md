@@ -10,6 +10,7 @@ cannot silently rot.
 | [`python-library/`](python-library/) | tests for touched modules, a changelog entry, green CI |
 | [`mcp-server/`](mcp-server/) | unit + integration tests for tools, before/after traces from an open-source tracer, human sign-off, an LLM reviewer's verdict |
 | [`web-service/`](web-service/) | migrations need rollback notes, UI changes need screenshots, sensitive paths need a label |
+| [`shared-policy/`](shared-policy/) | one organisation policy extended by a service: a rule replaced, one disabled, one added |
 | [`plugins/mergeproof-langfuse/`](plugins/mergeproof-langfuse/) | a verifier plugin that looks trace links up in Langfuse |
 | [`plugins/mergeproof-braintrust/`](plugins/mergeproof-braintrust/) | the same for Braintrust, through BTQL |
 

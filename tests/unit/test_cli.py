@@ -350,3 +350,16 @@ def test_replay_command_runs_read_only(tmp_path, monkeypatch, capsys):
 
     monkeypatch.delenv("GITHUB_REPOSITORY")
     assert run("replay", "-p", tmp_path / "candidate.yaml") == 3
+
+
+def test_validate_lists_rule_sources_for_inherited_policies(tmp_path, capsys):
+    (tmp_path / "base.yaml").write_text(
+        "rules:\n  - id: inherited\n    when: { paths: ['src/**'] }\n    require: [{ check: files.changed }]\n"
+    )
+    (tmp_path / "mergeproof.yaml").write_text(
+        "extends: path:base.yaml\nrules:\n  - id: local\n    when: { labels: ['x'] }\n"
+        "    require: [{ check: pr.labels, with: { any_of: ['x'] } }]\n"
+    )
+    assert run("validate", "-p", tmp_path / "mergeproof.yaml") == 0
+    out = capsys.readouterr().out
+    assert "inherited  path:base.yaml" in out and "local      this file" in out

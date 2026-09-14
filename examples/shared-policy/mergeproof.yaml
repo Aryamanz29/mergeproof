@@ -1,0 +1,30 @@
+# This service inherits the organisation's Python policy and adjusts it.
+# In a real repository the base would be pinned remotely:
+#   extends: github:acme/policies/python-service.yaml@v1
+# Here it is a path, so the example runs offline.
+extends: path:policies/python-service.yaml
+project: billing-api
+
+rules:
+  # Replace a base rule by id: this service maps tests differently.
+  - id: source-needs-tests
+    description: Source changes ship with tests next to the module.
+    when:
+      paths: ["src/**/*.py"]
+    require:
+      - check: tests.changed
+        name: tests for touched modules
+        with: { map: { "src/billing/{name}.py": "src/billing/tests/test_{name}*.py" } }
+
+  # Switch a base rule off: this service keeps its changelog elsewhere.
+  - id: changelog
+    enabled: false
+
+  # Add one of its own.
+  - id: payment-code-is-reviewed-by-owners
+    description: Changes under payments/ need the payments label from a code owner.
+    when:
+      paths: ["src/billing/payments/**"]
+    require:
+      - check: pr.labels
+        with: { any_of: ["payments-approved"] }

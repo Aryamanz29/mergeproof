@@ -1,0 +1,11 @@
+{
+  "expected": "fail",
+  "context": {
+    "source": "github", "online": true, "repo": "acme/billing-api", "number": 13,
+    "title": "feat: add tax table", "author": "dev", "labels": [],
+    "base_ref": "main", "head_sha": "3333333aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "base_sha": "0000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "body": "Adds the tax table.",
+    "files": [{"path": "migrations/0042_tax_table.py", "status": "added"}],
+    "check_runs": []
+  }
+}

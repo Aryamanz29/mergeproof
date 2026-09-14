@@ -60,3 +60,14 @@ def test_problems_catch_unknown_checks_and_bad_params(registry):
     found = policy.problems(pol, registry)
     assert len(found) == 2
     assert "nope" in found[0] and "unknown check" in found[1]
+
+
+def test_load_resolves_extends_and_reports_sources(tmp_path):
+    (tmp_path / "base.yaml").write_text(
+        "rules:\n  - id: base-rule\n    when: { paths: ['src/**'] }\n    require: [{ check: files.changed }]\n"
+    )
+    (tmp_path / "mergeproof.yaml").write_text("extends: path:base.yaml\nrules: []\n")
+    pol = policy.load(tmp_path / "mergeproof.yaml")
+    assert pol.inherited and pol.rules[0].source == "path:base.yaml"
+    plain = policy.loads("rules:\n  - id: r\n    require: [{ check: files.changed }]\n")
+    assert not plain.inherited and plain.rules[0].source == ""

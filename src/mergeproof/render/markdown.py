@@ -181,7 +181,8 @@ def explain_markdown(report: Report, policy: Policy, explanations: dict[tuple[st
         lines.append("No rules apply to the current diff.")
         return "\n".join(lines)
     for rule in report.matched:
-        lines += [f"## {rule.id} [{rule.severity.value}]", ""]
+        origin = f" <sub>from {rule.source}</sub>" if rule.source else ""
+        lines += [f"## {rule.id} [{rule.severity.value}]{origin}", ""]
         if rule.description:
             lines += [rule.description, ""]
         if rule.files:

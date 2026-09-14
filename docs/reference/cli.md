@@ -4,7 +4,7 @@
 mergeproof check          evaluate the policy and report; exit 0 pass, 1 fail, 2 pending
 mergeproof explain        what this change must prove and what is missing
 mergeproof template       the evidence block still missing for this change
-mergeproof validate       check the policy file
+mergeproof validate       check the policy file; with `extends`, list where each rule comes from
 mergeproof init           write a starter policy
 mergeproof checks         list available checks and their parameters
 mergeproof agent-prompt   render an AGENTS.md section from the policy
