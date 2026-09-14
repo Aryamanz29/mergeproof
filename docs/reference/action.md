@@ -1,7 +1,7 @@
 # GitHub Action
 
 ```yaml
-- uses: Aryamanz29/mergeproof@v0
+- uses: Aryamanz29/mergeproof@v1
   with:
     policy: mergeproof.yaml
 ```
