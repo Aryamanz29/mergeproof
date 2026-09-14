@@ -9,7 +9,7 @@ from mergeproof.report import Outcome
 
 class Labels(Check):
     id = "pr.labels"
-    description = "PR labels satisfy any_of / all_of / none_of."
+    description = "PR labels satisfy any_of, all_of and none_of."
 
     class Params(BaseModel):
         model_config = ConfigDict(extra="forbid")

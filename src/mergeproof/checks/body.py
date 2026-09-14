@@ -11,7 +11,7 @@ from mergeproof.report import Outcome
 
 class Body(Check):
     id = "pr.body"
-    description = "The PR description has the required sections, matches a regex, or meets a minimum length."
+    description = "The PR description has the required sections, matches a regex, and meets a minimum length."
 
     class Params(BaseModel):
         model_config = ConfigDict(extra="forbid")
