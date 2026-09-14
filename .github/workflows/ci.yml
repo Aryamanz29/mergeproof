@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number to gate. release-please dispatches this for its release PR, which the workflow token cannot start CI on.
+        required: false
+        default: ""
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -91,7 +97,7 @@ jobs:
 
   gate:
     name: 🛡️ gate
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || inputs.pr != ''
     needs: [lint, unit, integration, docker]
     runs-on: ubuntu-latest
     permissions:
@@ -106,3 +112,5 @@ jobs:
         with:
           version: "."
           pending-ok: "true"
+        env:
+          MERGEPROOF_PR_NUMBER: ${{ inputs.pr || github.event.pull_request.number }}
