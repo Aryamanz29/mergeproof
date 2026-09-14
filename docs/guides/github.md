@@ -2,7 +2,7 @@
 
 ## The workflow
 
-Copy [`examples/github-workflow.yml`](../examples/github-workflow.yml) to
+Copy [`examples/github-workflow.yml`](https://github.com/Aryamanz29/mergeproof/blob/main/examples/github-workflow.yml) to
 `.github/workflows/mergeproof.yml`. The important parts:
 
 - **Events.** `pull_request` for pushes, edits and labels; `issue_comment` because `/verified` and
@@ -63,7 +63,7 @@ status blocks the merge button. Green job, blocked merge, clear reason.
 
 | channel | where it shows | what it carries |
 |---|---|---|
-| comment | the PR conversation, one comment updated in place | headline, table of requirements, next steps, evidence template |
+| comment | the PR conversation, one comment updated in place | the scorecard: one pill per rule, one sentence, the requirements that block with what to do, the evidence template, and everything else as a receipt |
 | commit status | the merge box, requireable | `3 of 5 requirements satisfied, 2 pending`, linking to the comment. Statuses have no check-suite affinity, so a re-run on the same commit, a reopen, or a bot-authored PR all update it correctly |
 | review comments | the Files changed tab, on the file concerned | one comment per unmet requirement: a missing test on the source file, a PR-level requirement on the first file that made its rule apply. Created, updated and removed as the PR evolves |
 | job annotations | the workflow job's row and the diff | "expected a changed test matching …" on the source file, emitted as workflow commands, so they are always on the newest run |
@@ -95,7 +95,7 @@ gate:
 The avatar and author on the comment, status and Check Run belong to the token that created them.
 With the default token that is `github-actions`. To post as **mergeproof** with your logo:
 
-1. Create a GitHub App: name `mergeproof`, logo `docs/logo.png`, webhook inactive. Repository
+1. Create a GitHub App: name `mergeproof`, logo `docs/assets/logo.svg`, webhook inactive. Repository
    permissions: Checks read and write, Commit statuses read and write, Pull requests read and write,
    Contents read, Metadata read. "Any account" if other repositories of yours should install it.
 2. Install it on the repository. Note the App ID and generate a private key.
