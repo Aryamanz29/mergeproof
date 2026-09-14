@@ -75,6 +75,7 @@ class TestFilesChanged:
         assert run_check(FilesChanged(), ctx, any_of=["docs/**"]).status == Status.FAIL
         out = run_check(FilesChanged(), ctx, none_of=["db/migrations/**"])
         assert out.status == Status.FAIL and "must not change" in out.summary
+        assert FilesChanged().explain(FilesChanged.Params(all_of=["CHANGELOG.md"])) == "Change `CHANGELOG.md`."
 
 
 class TestEvidenceField:

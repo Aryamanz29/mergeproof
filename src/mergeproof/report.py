@@ -52,6 +52,13 @@ class RequirementResult(BaseModel):
     instructions: str | None = None
     evidence_template: dict[str, Any] = Field(default_factory=dict)
 
+    @property
+    def effective(self) -> Status:
+        """A failing requirement on a warn-only rule counts as a warning."""
+        if self.severity == Severity.WARN and self.outcome.status in (Status.FAIL, Status.ERROR):
+            return Status.WARN
+        return self.outcome.status
+
 
 class RuleResult(BaseModel):
     id: str
@@ -104,18 +111,35 @@ class Report(BaseModel):
     def counts(self) -> dict[Status, int]:
         counts = dict.fromkeys(Status, 0)
         for _, req in self.requirements:
-            counts[req.outcome.status] += 1
+            counts[req.effective] += 1
         return counts
 
     def headline(self) -> str:
-        """`3 of 5 requirements satisfied, 2 pending`; short enough for a commit status."""
+        """`3 of 5 requirements satisfied, 1 missing, 1 pending`; short enough for a commit status."""
         total = len(self.requirements)
         if total == 0:
             return "no rules apply to this change"
         counts = self.counts()
         satisfied = counts[Status.PASS] + counts[Status.SKIP]
-        rest = ", ".join(f"{n} {status.value}" for status, n in counts.items() if n and status in UNMET)
-        return f"{satisfied} of {total} requirements satisfied" + (f", {rest}" if rest else "")
+        parts = []
+        missing = counts[Status.FAIL] + counts[Status.ERROR]
+        if missing:
+            parts.append(f"{missing} missing")
+        if counts[Status.PENDING]:
+            parts.append(f"{counts[Status.PENDING]} pending")
+        if counts[Status.WARN]:
+            parts.append(f"{counts[Status.WARN]} warning" + ("s" if counts[Status.WARN] > 1 else ""))
+        return f"{satisfied} of {total} requirements satisfied" + (f", {', '.join(parts)}" if parts else "")
+
+    def blocking_unmet(self) -> list[tuple[RuleResult, RequirementResult]]:
+        return [
+            (rule, req)
+            for rule, req in self.requirements
+            if req.effective in (Status.FAIL, Status.ERROR, Status.PENDING)
+        ]
+
+    def warnings(self) -> list[tuple[RuleResult, RequirementResult]]:
+        return [(rule, req) for rule, req in self.requirements if req.effective == Status.WARN]
 
     def annotations(self) -> list[Annotation]:
         return [a for _, req in self.requirements for a in req.outcome.annotations]

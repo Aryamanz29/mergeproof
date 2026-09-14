@@ -107,6 +107,9 @@ def add_publish_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--check-run", action="store_true", help="create a Check Run with file annotations (needs checks: write)"
     )
+    parser.add_argument(
+        "--review-comments", action="store_true", help="post what is needed as review comments on the files concerned"
+    )
 
 
 def build_context(args: argparse.Namespace) -> Context:
@@ -168,12 +171,20 @@ def cmd_check(args: argparse.Namespace) -> int:
                 print(line)
     github.write_step_summary(render.report_markdown(report))
     github.write_output("verdict", report.verdict.value)
-    if args.comment or args.status or args.check_run:
-        publish(report, comment=args.comment, status=args.status, check_run=args.check_run)
+    if args.comment or args.status or args.check_run or args.review_comments:
+        publish(
+            report,
+            comment=args.comment,
+            status=args.status,
+            check_run=args.check_run,
+            review_comments=args.review_comments,
+        )
     return report.exit_code
 
 
-def publish(report: Report, comment: bool = True, status: bool = False, check_run: bool = False) -> None:
+def publish(
+    report: Report, comment: bool = True, status: bool = False, check_run: bool = False, review_comments: bool = False
+) -> None:
     """Report back to GitHub: the sticky comment, the commit status line, the Check Run with annotations."""
     if report.source != "github" or not report.repo or report.number is None or not report.head_sha:
         print("mergeproof: publishing needs a GitHub context; skipping", file=sys.stderr)
@@ -259,7 +270,13 @@ def cmd_report(args: argparse.Namespace) -> int:
 
 
 def cmd_comment(args: argparse.Namespace) -> int:
-    publish(read_report(args.report), comment=True, status=args.status, check_run=args.check_run)
+    publish(
+        read_report(args.report),
+        comment=True,
+        status=args.status,
+        check_run=args.check_run,
+        review_comments=args.review_comments,
+    )
     return 0
 
 
@@ -348,6 +365,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("report", nargs="?", default="-")
     p.add_argument("--status", action="store_true", help="also set the `mergeproof` commit status")
     p.add_argument("--check-run", action="store_true", help="also create a Check Run with file annotations")
+    p.add_argument("--review-comments", action="store_true", help="also post review comments on the files concerned")
     p.set_defaults(func=cmd_comment)
 
     p = sub.add_parser("validate", help="check the policy file")

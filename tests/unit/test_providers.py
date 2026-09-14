@@ -239,3 +239,69 @@ def test_run_url(monkeypatch):
     monkeypatch.setenv("GITHUB_REPOSITORY", "o/r")
     monkeypatch.setenv("GITHUB_RUN_ID", "9")
     assert github.run_url() == "https://github.com/o/r/actions/runs/9"
+
+
+def review_report():
+    from mergeproof import engine, policy
+    from mergeproof.checks.registry import builtin_registry
+
+    from .conftest import make_context
+
+    pol = policy.loads(
+        "rules:\n"
+        "  - id: tests\n    when: {paths: ['src/**']}\n    instructions: Add a regression test.\n"
+        "    require: [{check: tests.changed, with: {map: {'src/{name}.py': 'tests/test_{name}.py'}}}]\n"
+        "  - id: evidence\n    when: {paths: ['src/**']}\n"
+        "    require:\n      - {check: evidence.field, name: environment, with: {key: environment}}\n"
+        "      - {check: ci.job_passed, name: ci, with: {name: unit}}\n"
+    )
+    report = engine.evaluate(
+        pol, make_context(files=["src/a.py", "src/b.py"], repo="o/r", number=5), builtin_registry()
+    )
+    return report
+
+
+def test_review_comment_bodies_pick_files_and_skip_unactionable_pending():
+    bodies = github.review_comment_bodies(review_report())
+    keys = sorted(bodies)
+    assert keys == [
+        ("src/a.py", "evidence:environment"),
+        ("src/a.py", "tests:tests.changed:src/a.py"),
+        ("src/b.py", "tests:tests.changed:src/b.py"),
+    ]
+    body = bodies[("src/a.py", "tests:tests.changed:src/a.py")]
+    assert body.startswith("<!-- mergeproof-review:tests:tests.changed:src/a.py -->")
+    assert "**mergeproof · tests.changed** <sub>rule `tests`, blocking</sub>" in body
+    assert "expected a changed test matching tests/test_a.py" in body and "Add a regression test." in body
+    assert "touches `src/a.py`, `src/b.py`" in bodies[("src/a.py", "evidence:environment")]
+
+
+@respx.mock
+def test_sync_review_comments_creates_updates_and_deletes():
+    api = "https://api.github.com"
+    report = review_report()
+    bodies = github.review_comment_bodies(report)
+    existing_key = "tests:tests.changed:src/a.py"
+    stale_key = "gone:old:src/z.py"
+    respx.get(f"{api}/repos/o/r/pulls/5/comments").mock(
+        return_value=httpx.Response(
+            200,
+            json=[
+                {"id": 1, "body": f"<!-- mergeproof-review:{existing_key} -->\nold text"},
+                {"id": 2, "body": f"<!-- mergeproof-review:{stale_key} -->\nstale"},
+                {"id": 3, "body": "a human comment"},
+            ],
+        )
+    )
+    created = respx.post(f"{api}/repos/o/r/pulls/5/comments").mock(return_value=httpx.Response(201, json={}))
+    updated = respx.patch(f"{api}/repos/o/r/pulls/comments/1").mock(return_value=httpx.Response(200, json={}))
+    deleted = respx.delete(f"{api}/repos/o/r/pulls/comments/2").mock(return_value=httpx.Response(204))
+    counts = github.sync_review_comments(github.Client("t"), report, bodies)
+    assert counts == {"created": 2, "updated": 1, "deleted": 1}
+    sent = json.loads(created.calls[0].request.content)
+    assert (
+        sent["subject_type"] == "file"
+        and sent["commit_id"] == report.head_sha
+        and sent["path"] in {"src/a.py", "src/b.py"}
+    )
+    assert updated.called and deleted.called

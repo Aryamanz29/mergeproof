@@ -23,6 +23,7 @@ Copy [`examples/github-workflow.yml`](../examples/github-workflow.yml) to
 | `version` | `mergeproof` | pip requirement to install: a version spec, a path, a git URL |
 | `plugins` | | extra pip requirements, e.g. verifier plugins |
 | `comment` | `true` | create or update the sticky comment |
+| `review-comments` | `true` | post what is still needed as file-level review comments, kept in sync on every run |
 | `status` | `true` | set the `mergeproof` commit status; this is the row to require |
 | `check-run` | `false` | also create a `mergeproof` Check Run; off because file annotations already land on the job |
 | `pending-ok` | `false` | let the job succeed while evidence is pending; the status still says pending |
@@ -64,6 +65,7 @@ status blocks the merge button. Green job, blocked merge, clear reason.
 |---|---|---|
 | comment | the PR conversation, one comment updated in place | headline, table of requirements, next steps, evidence template |
 | commit status | the merge box, requireable | `3 of 5 requirements satisfied, 2 pending`, linking to the comment. Statuses have no check-suite affinity, so a re-run on the same commit, a reopen, or a bot-authored PR all update it correctly |
+| review comments | the Files changed tab, on the file concerned | one comment per unmet requirement: a missing test on the source file, a PR-level requirement on the first file that made its rule apply. Created, updated and removed as the PR evolves |
 | job annotations | the workflow job's row and the diff | "expected a changed test matching …" on the source file, emitted as workflow commands, so they are always on the newest run |
 | Check Run (opt-in) | the Checks tab | the full report as a check; GitHub associates an API-created check run with the first suite on a commit, so on re-runs the merge box may keep waiting for it, which is why it is off by default |
 

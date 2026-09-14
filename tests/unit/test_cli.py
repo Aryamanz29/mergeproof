@@ -226,8 +226,12 @@ def test_check_publishes_each_requested_channel(tmp_path, monkeypatch, capsys):
     )
     monkeypatch.setattr(github, "set_commit_status", lambda *a: calls.append("status"))
     monkeypatch.setattr(github, "create_check_run", lambda *a: calls.append("check") or "https://k/1")
+    monkeypatch.setattr(github, "sync_review_comments", lambda *a: calls.append("review") or {"created": 1})
     assert run("check", "--context", context, "-p", policy, "-q", "--status") == 0
     assert calls == ["status"]
+    calls.clear()
+    assert run("check", "--context", context, "-p", policy, "-q", "--review-comments") == 0
+    assert calls == ["review"]
     calls.clear()
     assert run("check", "--context", context, "-p", policy, "-q", "--comment", "--check-run") == 0
     assert calls == [("comment", True), "check"]

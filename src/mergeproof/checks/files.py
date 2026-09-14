@@ -44,4 +44,5 @@ class FilesChanged(Check):
             parts.append("change " + " and ".join(f"`{g}`" for g in params.all_of))
         if params.none_of:
             parts.append("leave " + ", ".join(f"`{g}`" for g in params.none_of) + " untouched")
-        return "; ".join(parts).capitalize() + "."
+        text = "; ".join(parts)
+        return text[:1].upper() + text[1:] + "."
