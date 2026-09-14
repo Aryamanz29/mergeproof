@@ -51,6 +51,8 @@ the PR. Coding agents read the same file, so what they are told is what CI check
 
 </div>
 
+<p align="center"><img src="assets/how-it-works.svg" alt="How mergeproof fits into a pull request" width="900"></p>
+
 ## Sixty seconds
 
 ```sh

@@ -1,0 +1,81 @@
+# How mergeproof fits into a pull request. Render with `make diagrams`.
+# A grid rather than an auto layout: the flow reads left to right along the top row,
+# then right to left along the bottom one. Cells fill column by column.
+
+vars: {
+  d2-config: {
+    theme-id: 6
+    dark-theme-id: 200
+    pad: 16
+  }
+}
+
+classes: {
+  box: {style.border-radius: 8; style.stroke-width: 1; style.font-size: 15}
+  hint: {style.font-size: 13; style.italic: true}
+}
+
+grid-columns: 3
+horizontal-gap: 190
+vertical-gap: 80
+
+policy: {
+  class: box
+  shape: page
+  label: "mergeproof.yaml\n\nwhen a change touches tools/**\nrequire integration tests changed,\nbefore/after traces, reviewer approval"
+  style.fill: "#f5f3ff"
+  style.stroke: "#7c3aed"
+  style.font-color: "#3b0764"
+}
+done: {
+  label: ""
+  style.fill: transparent
+  style.stroke: transparent
+  merge: {
+    class: box
+    shape: oval
+    label: "merge"
+    width: 220
+    height: 90
+    style.fill: "#dcfce7"
+    style.stroke: "#16a34a"
+    style.font-color: "#14532d"
+  }
+}
+author: {
+  class: box
+  label: "contributor or coding agent\n\nmergeproof explain\nshows what this change must prove"
+}
+report: {
+  class: box
+  label: "what the pull request sees"
+  comment: "scorecard comment"
+  status: "commit status: mergeproof"
+  files: "review comments on the files"
+  grid-columns: 1
+  grid-gap: 8
+}
+pr: {
+  class: box
+  label: "pull request"
+  diff: "diff"
+  ci: "CI runs"
+  evidence: "evidence block"
+  reviews: "reviews"
+  grid-columns: 2
+  grid-gap: 8
+}
+gate: {
+  class: box
+  label: "mergeproof action\n\nenforces mergeproof.yaml against the diff,\nCI runs, evidence block and reviews;\nlinks are looked up at their source\n(http, Langfuse, Braintrust, yours)"
+  style.fill: "#7c3aed"
+  style.font-color: "#ffffff"
+  style.stroke: "#5b21b6"
+  style.bold: true
+}
+
+policy -> author: read before pushing {class: hint; style.stroke-dash: 4}
+author -> pr: opens it with tests + evidence {class: hint}
+pr -> gate: on every push, comment and CI completion {class: hint}
+gate -> report
+report -> done.merge: the one required check {class: hint}

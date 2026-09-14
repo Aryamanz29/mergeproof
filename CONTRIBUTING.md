@@ -21,6 +21,8 @@ Guidelines:
   `tests/integration` and are marked `integration`.
 - `CHANGELOG.md` is written by release-please from commit messages; do not edit it by hand.
 - Documentation lives in `docs/` and is built with MkDocs; `make docs` fails on a broken link.
+- Diagrams are [D2](https://d2lang.com) sources in `docs/diagrams/`, rendered with `make diagrams`; README
+  screenshots come from `make screenshots`, never from a hand-drawn mockup.
 
 ## Commits and releases
 

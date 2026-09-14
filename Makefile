@@ -1,4 +1,4 @@
-.PHONY: help setup lint fmt typecheck test integration check docs docs-serve build clean
+.PHONY: help setup lint fmt typecheck test integration check docs docs-serve diagrams screenshots build clean
 
 help:            ## show this help
 	@grep -E '^[a-z]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*## /\t/' | column -t -s "$$(printf '\t')"
@@ -33,6 +33,13 @@ docs:            ## build the documentation site into site/
 
 docs-serve:      ## serve the documentation with live reload
 	uv run --group docs mkdocs serve
+
+diagrams:        ## render docs/diagrams/*.d2 to docs/assets (needs d2: brew install d2)
+	for f in docs/diagrams/*.d2; do d2 $$f docs/assets/$$(basename $${f%.d2}).svg; done
+
+screenshots:     ## re-shoot the README pictures from live output (needs gh and Chrome)
+	uv run scripts/screenshots comment 33
+	uv run scripts/screenshots explain examples/python-library missing-tests
 
 build:           ## sdist + wheel into dist/
 	uv build
