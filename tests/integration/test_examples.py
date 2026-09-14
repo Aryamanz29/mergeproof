@@ -35,7 +35,7 @@ def test_scenario_produces_expected_verdict(scenario: Path, tmp_path: Path, lang
     assert verdict == data["expected"], proc.stdout
 
     text = run_cli("report", "-", "--format", "md", input=proc.stdout)
-    assert text.returncode == 0 and "**mergeproof**" in text.stdout
+    assert text.returncode == 0 and "img.shields.io/badge/mergeproof" in text.stdout
 
 
 def report_verdict(report: dict) -> str:
