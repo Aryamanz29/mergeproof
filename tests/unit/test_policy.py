@@ -71,3 +71,9 @@ def test_load_resolves_extends_and_reports_sources(tmp_path):
     assert pol.inherited and pol.rules[0].source == "path:base.yaml"
     plain = policy.loads("rules:\n  - id: r\n    require: [{ check: files.changed }]\n")
     assert not plain.inherited and plain.rules[0].source == ""
+
+
+def test_unknown_policy_versions_are_refused_with_a_pointer():
+    with pytest.raises(policy.PolicyError, match="version 2 is not supported"):
+        policy.loads("version: 2\nrules:\n  - id: r\n    require: [{ check: files.changed }]\n")
+    assert policy.loads("version: 1\nrules:\n  - id: r\n    require: [{ check: files.changed }]\n").version == 1

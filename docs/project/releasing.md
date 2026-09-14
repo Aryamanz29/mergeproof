@@ -11,5 +11,13 @@ Nothing is versioned by hand.
    both to the Release, and moves the floating `vX` tag. `image.yml` pushes
    `ghcr.io/aryamanz29/mergeproof:X.Y.Z`, `:X.Y`, `:X` and `:latest`.
 
-Pull requests opened by the workflow token do not start CI on their own; close and reopen the
-release PR once, or configure a `RELEASE_PLEASE_TOKEN` secret.
+Pull requests opened by the workflow token do not start CI on their own; the release-please job
+dispatches CI onto the release PR, or configure a `RELEASE_PLEASE_TOKEN` secret.
+
+## Cutting 1.0
+
+While the version is 0.x, `bump-minor-pre-major` makes a breaking change bump the minor, so 1.0
+does not happen by accident. To cut it, merge a commit whose footer says `Release-As: 1.0.0`;
+release-please then opens the 1.0.0 release PR. After that, remove `bump-minor-pre-major` from
+`release-please-config.json` so the next `feat!` bumps the major, as [Stability](stability.md)
+promises.

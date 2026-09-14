@@ -53,11 +53,13 @@ nav:
       - Checks: reference/checks.md
       - Command line: reference/cli.md
       - GitHub Action: reference/action.md
+      - Policy schema: reference/schema.md
   - Extending:
       - Plugins: extending/plugins.md
   - Project:
       - Contributing: project/contributing.md
       - Releasing: project/releasing.md
+      - Stability: project/stability.md
       - FAQ: project/faq.md
       - Changelog: project/changelog.md
 

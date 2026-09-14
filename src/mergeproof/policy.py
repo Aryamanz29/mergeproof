@@ -71,6 +71,9 @@ class Rule(BaseModel):
         return self
 
 
+SUPPORTED_VERSIONS = (1,)
+
+
 class Policy(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -83,6 +86,16 @@ class Policy(BaseModel):
     @property
     def inherited(self) -> bool:
         return bool(self.extends)
+
+    @model_validator(mode="after")
+    def version_is_supported(self) -> Policy:
+        if self.version not in SUPPORTED_VERSIONS:
+            supported = ", ".join(str(v) for v in SUPPORTED_VERSIONS)
+            raise ValueError(
+                f"policy version {self.version} is not supported by this mergeproof (supports {supported}); "
+                "upgrade mergeproof or see the schema reference for the upgrade path"
+            )
+        return self
 
     @model_validator(mode="after")
     def ids_are_unique(self) -> Policy:

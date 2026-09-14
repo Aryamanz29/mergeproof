@@ -25,7 +25,7 @@ from typing import NoReturn
 
 import httpx
 
-from mergeproof import __version__, doctor, engine, evidence, policy, receipt, render, replay
+from mergeproof import __version__, doctor, engine, evidence, policy, receipt, render, replay, schema
 from mergeproof.checks.registry import Registry, load_registry
 from mergeproof.context import Context, ContextError
 from mergeproof.providers import git, github
@@ -33,8 +33,9 @@ from mergeproof.report import EXIT_USAGE, Report
 
 DEFAULT_POLICY = "mergeproof.yaml"
 
-STARTER_POLICY = """\
-# What a change must prove before it merges. Docs: https://github.com/Aryamanz29/mergeproof
+STARTER_POLICY = f"""\
+{schema.EDITOR_HINT}
+# What a change must prove before it merges. Docs: https://aryamanz29.github.io/mergeproof/
 version: 1
 project: my-project
 
@@ -49,10 +50,10 @@ rules:
         name: unit tests touched
         with:
           map:
-            "src/{pkg}/{name}.py": "tests/**/test_{name}*.py"
+            "src/{{pkg}}/{{name}}.py": "tests/**/test_{{name}}*.py"
       - check: ci.job_passed
         name: tests green
-        with: { name: "test", regex: true }
+        with: {{ name: "test", regex: true }}
 
   - id: fix-needs-live-evidence
     description: Bug fixes show the behaviour before and after on a live environment.
@@ -64,10 +65,10 @@ rules:
     require:
       - check: evidence.field
         name: environment
-        with: { key: environment, equals: staging }
+        with: {{ key: environment, equals: staging }}
       - check: evidence.links
         name: before/after links
-        with: { min_pairs: 1 }
+        with: {{ min_pairs: 1 }}
       - check: review.human_verified
         name: reviewer verified
 """
@@ -415,6 +416,11 @@ def cmd_init(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_schema(args: argparse.Namespace) -> int:
+    print(schema.dumps(), end="")
+    return 0
+
+
 def cmd_checks(args: argparse.Namespace) -> int:
     if args.usage:
         return checks_usage(args)
@@ -525,6 +531,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--fail-on-block", action="store_true", help="exit 1 when any pull request would have been blocked")
     p.add_argument("-q", "--quiet", action="store_true", help="no progress on stderr")
     p.set_defaults(func=cmd_replay)
+
+    p = sub.add_parser("schema", help="print the JSON schema for mergeproof.yaml")
+    p.set_defaults(func=cmd_schema)
 
     p = sub.add_parser("receipt", help="show what a merged pull request proved (by merge sha, #number or number)")
     p.add_argument("key", help="merge commit sha, `#123` or `123`")

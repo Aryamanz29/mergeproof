@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aryamanz29.github.io/mergeproof/schema/mergeproof-v1.json",
+  "title": "Policy",
+  "description": "Rules of the form: when a change touches X, it must prove Y.",
+  "$defs": {
+    "Requirement": {
+      "additionalProperties": false,
+      "properties": {
+        "check": {
+          "title": "Check",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "with": {
+          "additionalProperties": true,
+          "title": "With",
+          "type": "object",
+          "description": "Parameters for the check; `mergeproof checks` lists them and validate checks them."
+        },
+        "severity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Severity"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "instructions": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instructions"
+        }
+      },
+      "required": [
+        "check"
+      ],
+      "title": "Requirement",
+      "type": "object"
+    },
+    "Rule": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
+        "when": {
+          "$ref": "#/$defs/When"
+        },
+        "severity": {
+          "$ref": "#/$defs/Severity",
+          "default": "block"
+        },
+        "require": {
+          "items": {
+            "$ref": "#/$defs/Requirement"
+          },
+          "minItems": 1,
+          "title": "Require",
+          "type": "array"
+        },
+        "instructions": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instructions"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Set to false to switch off a rule inherited through `extends`."
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "Rule",
+      "type": "object"
+    },
+    "Severity": {
+      "enum": [
+        "block",
+        "warn"
+      ],
+      "title": "Severity",
+      "type": "string"
+    },
+    "When": {
+      "additionalProperties": false,
+      "description": "Conditions under which a rule applies. Fields combine with AND, list items with OR.",
+      "properties": {
+        "paths": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Paths",
+          "type": "array"
+        },
+        "exclude_paths": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Exclude Paths",
+          "type": "array"
+        },
+        "labels": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Labels",
+          "type": "array"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "base_branches": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Base Branches",
+          "type": "array"
+        },
+        "authors": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Authors",
+          "type": "array"
+        }
+      },
+      "title": "When",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1,
+      "default": 1
+    },
+    "project": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Project"
+    },
+    "evidence_block": {
+      "default": "evidence",
+      "title": "Evidence Block",
+      "type": "string"
+    },
+    "extends": {
+      "description": "Base policies to inherit, applied in order before this file: `github:OWNER/REPO/file.yaml@REF` (a tag or sha) or `path:relative/file.yaml`.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "rules": {
+      "items": {
+        "$ref": "#/$defs/Rule"
+      },
+      "minItems": 1,
+      "title": "Rules",
+      "type": "array"
+    }
+  },
+  "required": [
+    "rules"
+  ],
+  "type": "object"
+}
