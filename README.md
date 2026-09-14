@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo-wordmark.svg" alt="mergeproof: proof before merge" width="420">
+  <img src="https://raw.githubusercontent.com/Aryamanz29/mergeproof/main/docs/assets/logo-wordmark.svg" alt="mergeproof: proof before merge" width="420">
 </p>
 
 <p align="center"><strong>Proof before merge.</strong> Pull requests earn their merge with evidence, not claims.</p>
@@ -9,15 +9,15 @@
   <a href="https://pypi.org/project/mergeproof/"><img src="https://img.shields.io/pypi/v/mergeproof?color=7c3aed" alt="PyPI"></a>
   <a href="https://pypi.org/project/mergeproof/"><img src="https://img.shields.io/pypi/pyversions/mergeproof" alt="Python versions"></a>
   <a href="https://github.com/marketplace/actions/mergeproof"><img src="https://img.shields.io/badge/Marketplace-mergeproof-7c3aed?logo=github" alt="GitHub Marketplace"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license"></a>
+  <a href="https://github.com/Aryamanz29/mergeproof/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license"></a>
 </p>
 
 <p align="center">
   <a href="https://aryamanz29.github.io/mergeproof/">Documentation</a> ·
   <a href="https://aryamanz29.github.io/mergeproof/getting-started/quickstart/">Quickstart</a> ·
   <a href="https://aryamanz29.github.io/mergeproof/reference/checks/">Checks</a> ·
-  <a href="examples/">Examples</a> ·
-  <a href="CHANGELOG.md">Changelog</a>
+  <a href="https://github.com/Aryamanz29/mergeproof/tree/main/examples/">Examples</a> ·
+  <a href="https://github.com/Aryamanz29/mergeproof/blob/main/CHANGELOG.md">Changelog</a>
 </p>
 
 ---
@@ -27,7 +27,7 @@ turns it into something CI can check: one YAML file in the repository says what 
 **prove** before it merges, the action checks the proof on every push, and the same file tells
 coding agents what to produce before they open the PR.
 
-<p align="center"><img src="docs/assets/pr-comment.png" alt="The mergeproof comment on a pull request: one pill per rule, the one requirement still missing with what to do, and the satisfied ones underneath" width="820"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/Aryamanz29/mergeproof/main/docs/assets/pr-comment.png" alt="The mergeproof comment on a pull request: one pill per rule, the one requirement still missing with what to do, and the satisfied ones underneath" width="820"></p>
 
 <p align="center"><sub>A real comment. One pill per rule, then only what blocks the merge and what to do about it; the rest is the receipt.</sub></p>
 
@@ -86,7 +86,7 @@ rules:
         with: { accept_approval: true }
 ```
 
-**2. Add the workflow.** Full version with comments: [`examples/github-workflow.yml`](examples/github-workflow.yml).
+**2. Add the workflow.** Full version with comments: [`examples/github-workflow.yml`](https://github.com/Aryamanz29/mergeproof/blob/main/examples/github-workflow.yml).
 
 ```yaml
 # .github/workflows/mergeproof.yml
@@ -117,7 +117,7 @@ reports, which is the right way to [roll it out](https://aryamanz29.github.io/me
 in the same words the PR comment will use. Agents run it in their loop; people run it before
 opening the PR.
 
-<p align="center"><img src="docs/assets/explain.png" alt="mergeproof explain in a terminal: the rule that applies, the requirement that is missing, and the fix" width="820"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/Aryamanz29/mergeproof/main/docs/assets/explain.png" alt="mergeproof explain in a terminal: the rule that applies, the requirement that is missing, and the fix" width="820"></p>
 
 ```sh
 pip install mergeproof            # or: uv tool install mergeproof, uvx mergeproof
@@ -142,8 +142,8 @@ mergeproof agent-prompt >> AGENTS.md
 
 Parameters for each: `mergeproof checks`, or the
 [checks reference](https://aryamanz29.github.io/mergeproof/reference/checks/). Anything
-vendor-specific is a plugin: the [Langfuse](examples/plugins/mergeproof-langfuse) and
-[Braintrust](examples/plugins/mergeproof-braintrust) verifiers are a dozen lines each.
+vendor-specific is a plugin: the [Langfuse](https://github.com/Aryamanz29/mergeproof/tree/main/examples/plugins/mergeproof-langfuse) and
+[Braintrust](https://github.com/Aryamanz29/mergeproof/tree/main/examples/plugins/mergeproof-braintrust) verifiers are a dozen lines each.
 
 ## Evidence
 
@@ -204,4 +204,4 @@ source, explains itself to agents, and runs entirely in your CI.
 ## Contributing
 
 `make setup`, then `make lint typecheck test`. Pull requests here are gated by this repository's own
-`mergeproof.yaml`. See [CONTRIBUTING.md](CONTRIBUTING.md). MIT licensed.
+`mergeproof.yaml`. See [CONTRIBUTING.md](https://github.com/Aryamanz29/mergeproof/blob/main/CONTRIBUTING.md). MIT licensed.
