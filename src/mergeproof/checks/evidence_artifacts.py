@@ -100,7 +100,7 @@ def collect(spec: Spec, value: Any, regex: re.Pattern[str]) -> tuple[list[Entry]
 
     if spec.kind == "single":
         url = value.get("url") if isinstance(value, dict) else value
-        if isinstance(value, (list, tuple)):
+        if isinstance(value, list | tuple):
             problems.append(f"`{spec.key}`: expected one link, got a list")
         else:
             accept(1, spec.key, url, f"`{spec.key}`")
@@ -113,7 +113,7 @@ def collect(spec: Spec, value: Any, regex: re.Pattern[str]) -> tuple[list[Entry]
         where = f"item {index}"
         if spec.kind == "set":
             url = item.get("url") if isinstance(item, dict) else item
-            if isinstance(item, (list, dict)) and not isinstance(item, dict):
+            if isinstance(item, list | dict) and not isinstance(item, dict):
                 problems.append(f"{where}: expected a link or a mapping with `url`")
                 continue
             accept(index, f"link {index}", url, where)
