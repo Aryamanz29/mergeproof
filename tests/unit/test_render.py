@@ -220,3 +220,22 @@ def test_nothing_is_emitted_when_everything_passes():
         policy.loads(ACTIONS_POLICY), make_context(files=["README.md"], online=False), builtin_registry()
     )
     assert render.workflow_commands(report) == []
+
+
+def test_footer_links_the_receipt_when_there_is_one():
+    pol = policy.loads(
+        textwrap.dedent(
+            """
+            rules:
+              - id: r
+                when: { paths: ["src/**"] }
+                require:
+                  - check: files.changed
+                    with: { any_of: ["src/**"] }
+            """
+        )
+    )
+    report = engine.evaluate(pol, make_context(files=["src/a.py"], repo="o/r", base_ref="main"), builtin_registry())
+    text = render.report_markdown(report, run_url="https://run/1", receipt_url="https://github.com/o/r/blob/x/r.json")
+    assert "[details](https://run/1) · [receipt](https://github.com/o/r/blob/x/r.json)" in text
+    assert "[receipt]" not in render.report_markdown(report, run_url="https://run/1")

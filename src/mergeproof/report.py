@@ -78,7 +78,12 @@ class Report(BaseModel):
     number: int | None = None
     head_sha: str | None = None
     base_ref: str | None = None
+    merged: bool = False
+    merge_commit_sha: str | None = None
+    merged_at: str = ""
+    merged_by: str = ""
     policy_path: str = "mergeproof.yaml"
+    policy_sha256: str = ""
     evaluated_at: str = Field(default_factory=lambda: datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC"))
     rules: list[RuleResult] = Field(default_factory=list)
 

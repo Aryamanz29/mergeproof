@@ -44,6 +44,7 @@ nav:
   - Guides:
       - Writing a policy: guides/policy.md
       - Evidence: guides/evidence.md
+      - Receipts: guides/receipts.md
       - GitHub setup: guides/github.md
       - Coding agents: guides/agents.md
       - Rolling it out: guides/rollout.md

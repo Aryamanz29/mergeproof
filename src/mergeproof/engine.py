@@ -42,6 +42,10 @@ def evaluate(policy: Policy, ctx: Context, registry: Registry) -> Report:
         number=ctx.number,
         head_sha=ctx.head_sha,
         base_ref=ctx.base_ref,
+        merged=ctx.merged,
+        merge_commit_sha=ctx.merge_commit_sha,
+        merged_at=ctx.merged_at,
+        merged_by=ctx.merged_by,
     )
     for rule in policy.rules:
         matched, files = applies(rule.when, ctx)

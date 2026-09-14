@@ -27,6 +27,12 @@ inputs:
     description: Removed in 0.8. Require the `mergeproof` commit status; file findings land as job annotations and review comments
     deprecationMessage: check-run was removed in 0.8; require the `mergeproof` commit status instead
     default: "false"
+  receipt:
+    description: When the pull request has merged, store the final report as `receipts/<merge sha>.json` on the receipt branch (needs contents:write and the `closed` event)
+    default: "true"
+  receipt-branch:
+    description: Branch that holds the receipts
+    default: mergeproof-receipts
   pending-ok:
     description: Succeed while evidence is still pending instead of failing the check
     default: "false"
@@ -47,6 +53,9 @@ outputs:
   rdjson:
     description: Path of the reviewdog rendering, for inline review comments
     value: mergeproof.rdjson
+  receipt:
+    description: URL of the receipt written for a merged pull request, empty otherwise
+    value: ${{ steps.gate.outputs.receipt }}
 
 runs:
   using: composite
@@ -65,6 +74,7 @@ runs:
         [ "${{ inputs.comment }}" = "true" ] && args+=(--comment)
         [ "${{ inputs.review-comments }}" = "true" ] && args+=(--review-comments)
         [ "${{ inputs.status }}" = "true" ] && args+=(--status)
+        [ "${{ inputs.receipt }}" = "true" ] && args+=(--receipt --receipt-branch "${{ inputs.receipt-branch }}")
         if [ "${{ inputs.check-run }}" = "true" ]; then
           echo "::error::check-run was removed in 0.8: require the mergeproof commit status instead"; exit 3
         fi

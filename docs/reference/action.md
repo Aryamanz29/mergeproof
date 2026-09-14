@@ -16,6 +16,8 @@
 | `comment` | `true` | create or update the sticky comment |
 | `review-comments` | `true` | post what is still needed as review comments on the files concerned, kept in sync |
 | `status` | `true` | set the `mergeproof` commit status; the context to require |
+| `receipt` | `true` | when the pull request has merged, store the final report on the receipt branch; see [Receipts](../guides/receipts.md) |
+| `receipt-branch` | `mergeproof-receipts` | branch that holds the receipts |
 | `pending-ok` | `false` | let the job succeed while evidence is pending; the status still says pending |
 | `github-token` | `${{ github.token }}` | token used for every channel |
 
@@ -27,6 +29,7 @@
 | `report` | path of the JSON report |
 | `junit` | path of the JUnit rendering, for test-result reporters |
 | `rdjson` | path of the reviewdog rendering |
+| `receipt` | URL of the receipt written for a merged pull request, empty otherwise |
 
 All four files are uploaded as the `mergeproof-report` artifact.
 
@@ -34,7 +37,7 @@ All four files are uploaded as the `mergeproof-report` artifact.
 
 | permission | needed for |
 |---|---|
-| `contents: read` | checkout |
+| `contents: read` | checkout; `write` to store receipts |
 | `pull-requests: write` | the comment and review comments |
 | `statuses: write` | the commit status |
 | `checks: read` | `ci.job_passed` reading other jobs' results |
@@ -46,12 +49,12 @@ Trigger on everything the gate reads:
 ```yaml
 on:
   pull_request:
-    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled, closed]
   issue_comment: { types: [created, edited] }
   check_suite:   { types: [completed] }
 ```
 
-Comment and check-suite events do not carry the PR number where the action expects it; set
+`closed` is what lets the action write the receipt when the PR merges. Comment and check-suite events do not carry the PR number where the action expects it; set
 `MERGEPROOF_PR_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}`.
 
 ## Exit codes

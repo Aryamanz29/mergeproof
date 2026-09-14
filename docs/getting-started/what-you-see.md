@@ -47,6 +47,12 @@ changes, deleted when it is satisfied. Nothing stale is left behind.
 Inside GitHub Actions, file-level findings are also emitted as workflow commands, so they appear as
 annotations on the job and in the diff view, with no extra permissions.
 
+## After the merge
+
+When the pull request merges, the final report is written to `receipts/<merge sha>.json` on the
+`mergeproof-receipts` branch and the comment links to it. `mergeproof receipt <sha|#number>` reads
+it back. See [Receipts](../guides/receipts.md).
+
 ## Locally
 
 `mergeproof explain` prints the same requirements for the working tree, with the evidence template
