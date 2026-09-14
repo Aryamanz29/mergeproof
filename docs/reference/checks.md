@@ -36,10 +36,34 @@ A key in the evidence block is present and valid. `key` is a dotted path (`image
 | `example` | placeholder shown in the evidence template |
 | `block` | evidence block tag, default `evidence` |
 
+## `evidence.artifacts`
+
+Links in the evidence block, of a declared `kind`, under `key` (default `artifacts`):
+
+| kind | shape of the value | counts |
+|---|---|---|
+| `pair` | a list of mappings with `before` and `after` (and anything else, e.g. `what`) | pairs |
+| `single` | one link, or a mapping with `url` (and `what`) | one link |
+| `set` | a list of links, or of mappings with `url` | links |
+
+| parameter | meaning |
+|---|---|
+| `kind` | `pair` (default), `single` or `set` |
+| `min_items` | pairs needed for `pair`, links for `set` (default 1); ignored for `single` |
+| `pattern` | regex a link must match; named groups are passed to the verifier |
+| `require_before` | `pair` only: require `before` as well as `after` (default true) |
+| `distinct` | `pair` only: `before` and `after` must differ (default true) |
+| `verify` | verifier name: `http` (link answers 2xx/3xx) or one from a plugin |
+| `verify_options` | keyword options for the verifier, e.g. `{ auth_header_env: DASH_TOKEN }` |
+| `example` | placeholder link in the evidence template |
+| `block` | evidence block tag, default `evidence` |
+
+The outcome data holds `pairs` (for `pair`) or `links`, and `verified` when a verifier ran.
+
 ## `evidence.links`
 
-Before/after link pairs under `key` (default `links`). Each item is a mapping with `before` and
-`after` (and anything else, e.g. `what`).
+`evidence.artifacts` with `kind: pair` and its own parameter names; policies and the Langfuse and
+Braintrust plugins are written against it. Before/after link pairs under `key` (default `links`).
 
 | parameter | meaning |
 |---|---|

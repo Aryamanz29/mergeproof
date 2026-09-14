@@ -5,6 +5,7 @@ import pytest
 from mergeproof.checks.agent_verdict import AgentVerdict
 from mergeproof.checks.body import Body
 from mergeproof.checks.ci_job import CiJobPassed
+from mergeproof.checks.evidence_artifacts import EvidenceArtifacts
 from mergeproof.checks.evidence_field import EvidenceField
 from mergeproof.checks.evidence_links import EvidenceLinks
 from mergeproof.checks.files import FilesChanged
@@ -179,6 +180,102 @@ class TestEvidenceLinks:
         check = EvidenceLinks()
         assert check.evidence_template(check.Params())["links"][0]["before"].startswith("https://")
         assert "before" not in check.evidence_template(check.Params(require_before=False))["links"][0]
+
+
+class TestEvidenceArtifacts:
+    def body(self, yaml_text):
+        return f"```evidence\n{yaml_text}\n```"
+
+    def test_pair_kind_is_evidence_links(self):
+        body = links_body([("https://x/1", "https://x/2")])
+        via_links = run_check(EvidenceLinks(), make_context(body=body))
+        via_kind = run_check(EvidenceArtifacts(), make_context(body=body), key="links", kind="pair")
+        assert via_kind.status == via_links.status == Status.PASS
+        assert via_kind.summary == via_links.summary and via_kind.data == via_links.data
+
+    def test_single(self):
+        check = EvidenceArtifacts()
+        out = run_check(
+            check, make_context(body=self.body("preview: https://pr-1.example.com")), key="preview", kind="single"
+        )
+        assert (
+            out.status == Status.PASS
+            and out.summary == "1 link"
+            and out.data == {"links": ["https://pr-1.example.com"]}
+        )
+        mapping = self.body("preview:\n  what: checkout\n  url: https://pr-1.example.com")
+        assert run_check(check, make_context(body=mapping), key="preview", kind="single").status == Status.PASS
+        out = run_check(check, make_context(body=self.body("preview: ftp://x")), key="preview", kind="single")
+        assert out.status == Status.FAIL and "does not look like an accepted link" in out.details[0]
+        out = run_check(
+            check, make_context(body=self.body("preview: [https://a, https://b]")), key="preview", kind="single"
+        )
+        assert out.status == Status.FAIL and "expected one link, got a list" in out.details[0]
+        out = run_check(check, make_context(body=""), key="preview", kind="single")
+        assert out.status == Status.FAIL and "no `preview` value" in out.summary
+        assert (
+            run_check(
+                check, make_context(body=self.body("preview: https://x")), key="preview", kind="single", min_items=5
+            ).status
+            == Status.PASS
+        )
+
+    def test_set(self):
+        check = EvidenceArtifacts()
+        shots = self.body("screens:\n  - https://s/1.png\n  - what: cart\n    url: https://s/2.png")
+        out = run_check(check, make_context(body=shots), key="screens", kind="set", min_items=2)
+        assert (
+            out.status == Status.PASS
+            and out.summary == "2 links"
+            and out.data["links"] == ["https://s/1.png", "https://s/2.png"]
+        )
+        out = run_check(check, make_context(body=shots), key="screens", kind="set", min_items=3)
+        assert out.status == Status.FAIL and "2 valid links, need 3" in out.summary
+        out = run_check(check, make_context(body=self.body("screens: https://s/1.png")), key="screens", kind="set")
+        assert out.status == Status.FAIL and "expected a list" in out.details[0]
+        out = run_check(check, make_context(body=self.body("screens:\n  - what: cart")), key="screens", kind="set")
+        assert out.status == Status.FAIL and "item 1: missing `url`" in out.details[0]
+        pattern = r"^https://s/.*\.png$"
+        out = run_check(check, make_context(body=shots), key="screens", kind="set", pattern=pattern, min_items=2)
+        assert out.status == Status.PASS
+
+    def test_verification_is_shared_across_kinds(self):
+        check = EvidenceArtifacts()
+        check.verifier = StubVerifier({"https://s/1.png"}, rich={"https://s/1.png"})
+        shots = self.body("screens:\n  - https://s/1.png\n  - https://s/2.png")
+        out = run_check(check, make_context(body=shots), key="screens", kind="set", verify="stub")
+        assert out.status == Status.FAIL and out.details == ["link 2: not found at https://s/2.png"]
+        one = self.body("preview: https://s/1.png")
+        out = run_check(check, make_context(body=one), key="preview", kind="single", verify="stub")
+        assert out.status == Status.PASS and out.summary == "1 link, all verified"
+        assert (
+            out.details == ["preview: tracer · 14 spans · 2026-09-14T17:02Z"]
+            and out.data["verified"][0]["size"] == "14 spans"
+        )
+        assert (
+            run_check(EvidenceArtifacts(), make_context(body=one), key="preview", kind="single", verify="nope").status
+            == Status.ERROR
+        )
+
+    def test_templates_and_explanations_per_kind(self):
+        check = EvidenceArtifacts()
+        pair = check.evidence_template(check.Params(key="traces"))
+        assert pair == {
+            "traces": [
+                {"what": "<what was exercised>", "before": check.Params().example, "after": check.Params().example}
+            ]
+        }
+        single = check.evidence_template(check.Params(key="preview", kind="single", example="https://p"))
+        assert single == {"preview": {"what": "<what was exercised>", "url": "https://p"}}
+        many = check.evidence_template(check.Params(key="screens", kind="set", example="https://s"))
+        assert many == {"screens": [{"what": "<what was exercised>", "url": "https://s"}]}
+        assert check.explain(check.Params(key="preview", kind="single", pattern="^https://")) == (
+            "A link under `preview` in the evidence block, matching `^https://`."
+        )
+        assert check.explain(check.Params(key="screens", kind="set", min_items=2, verify="http")) == (
+            "At least 2 links under `screens` in the evidence block; links are verified with `http`."
+        )
+        assert "Put the link under `preview`" in check.fix(check.Params(key="preview", kind="single"))
 
 
 class TestCiJobPassed:

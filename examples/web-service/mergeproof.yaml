@@ -24,9 +24,9 @@ rules:
       paths: ["web/src/**"]
       exclude_paths: ["web/src/**/*.test.*"]
     require:
-      - check: evidence.field
-        name: preview url
-        with: { key: preview, matches: "^https://" , example: "https://pr-<n>.preview.example.com" }
+      - check: evidence.artifacts
+        name: preview deployment
+        with: { key: preview, kind: single, pattern: "^https://", example: "https://pr-<n>.preview.example.com" }
       - check: evidence.links
         name: before/after screenshots
         with: { key: screenshots, min_pairs: 1, example: "https://<bucket>/<file>.png" }
