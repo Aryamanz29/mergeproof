@@ -5,6 +5,8 @@ import re
 
 import httpx
 
+from mergeproof.verifiers.base import Verification
+
 
 class HttpVerifier:
     """A link is valid when it answers with a 2xx or 3xx status.
@@ -25,8 +27,16 @@ class HttpVerifier:
         self.method = method.upper()
         self._client = httpx.Client(headers=headers, timeout=timeout, follow_redirects=True)
 
-    def verify(self, url: str, match: re.Match[str]) -> bool:
+    def verify(self, url: str, match: re.Match[str]) -> Verification:
         response = self._client.request(self.method, url)
         if response.status_code == 405 and self.method == "HEAD":
             response = self._client.get(url)
-        return response.status_code < 400
+        length = response.headers.get("content-length")
+        return Verification(
+            found=response.status_code < 400,
+            source="http",
+            at=response.headers.get("last-modified"),
+            size=f"{int(length):,} bytes" if length and length.isdigit() else None,
+            url=str(response.url) if str(response.url) != url else None,
+            facts={"status": response.status_code, "type": (response.headers.get("content-type") or "").split(";")[0]},
+        )

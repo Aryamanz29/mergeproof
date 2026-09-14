@@ -51,6 +51,8 @@ Before/after link pairs under `key` (default `links`). Each item is a mapping wi
 | `verify_options` | keyword options for the verifier, e.g. `{ auth_header_env: DASH_TOKEN }` |
 | `example` | placeholder link in the evidence template |
 
+When a verifier runs, the outcome's details carry one line per link saying what was found (source, id, size, time), and `data.verified` holds the structured form. Both reach the comment and the receipt.
+
 ## `ci.job_passed`
 
 A check run on the head commit succeeded. Only the newest run per name counts, so a run cancelled

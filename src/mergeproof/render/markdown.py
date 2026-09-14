@@ -117,7 +117,13 @@ def what_to_do(req: RequirementResult) -> str:
 def requirement_rows(pairs: list[tuple[RuleResult, RequirementResult]]) -> list[str]:
     rows = ["| Status | Requirement | Detail |", "|:--|:--|:--|"]
     for rule, req in pairs:
-        rows.append(f"| {status_pill(req.effective)} | {req.label}<br><sub>{rule.id}</sub> | {req.outcome.summary} |")
+        detail = req.outcome.summary
+        if req.outcome.details:
+            shown = [d.replace("|", "\\|") for d in req.outcome.details[:4]]
+            if len(req.outcome.details) > 4:
+                shown.append(f"and {len(req.outcome.details) - 4} more")
+            detail += "<br><sub>" + "<br>".join(shown) + "</sub>"
+        rows.append(f"| {status_pill(req.effective)} | {req.label}<br><sub>{rule.id}</sub> | {detail} |")
     return rows
 
 

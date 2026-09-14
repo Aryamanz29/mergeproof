@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from mergeproof.checks.base import Check, error, fail, ok, plural
 from mergeproof.context import Context
 from mergeproof.report import Outcome
-from mergeproof.verifiers import UnknownVerifier, Verifier, load_verifier
+from mergeproof.verifiers import UnknownVerifier, Verification, Verifier, as_verification, load_verifier
 
 ANY_URL = r"^https?://\S+$"
 
@@ -77,35 +77,48 @@ class EvidenceLinks(Check):
             return fail(f"{plural(len(pairs), 'valid pair')}, need {params.min_pairs}", fix=self.fix(params))
 
         if params.verify:
-            unresolved = self.verify_pairs(pairs, regex, params)
-            if unresolved is None:
+            verified = self.verify_pairs(pairs, regex, params)
+            if verified is None:
                 return error(f"verifier {params.verify!r} is not available or failed")
+            unresolved = [line for line, v in verified if v is None or not v.found]
             if unresolved:
                 return fail("link(s) could not be verified", details=unresolved, fix=self.fix(params))
-            return ok(f"{plural(len(pairs), 'before/after pair')}, all verified", data={"pairs": pairs})
+            return ok(
+                f"{plural(len(pairs), 'before/after pair')}, all verified",
+                details=[line for line, _ in verified],
+                data={"pairs": pairs, "verified": [v.model_dump(exclude_none=True) for _, v in verified if v]},
+            )
         return ok(plural(len(pairs), "before/after pair"), data={"pairs": pairs})
 
-    def verify_pairs(self, pairs: list[dict[str, str]], regex: re.Pattern[str], params: Params) -> list[str] | None:
-        """Return the links that did not resolve, or None when the verifier itself is unusable."""
+    def verify_pairs(
+        self, pairs: list[dict[str, str]], regex: re.Pattern[str], params: Params
+    ) -> list[tuple[str, Verification | None]] | None:
+        """One (line, verification) per link, in order; None when the verifier itself is unusable.
+
+        The line is what a person reads: `after: braintrust · mcp-internal · 14 spans · 2026-09-14T17:02Z`,
+        or the reason a link did not resolve. The verification is None when the verifier raised.
+        """
         verifier = self.verifier
         if verifier is None:
             try:
                 verifier = load_verifier(params.verify or "", params.verify_options)
             except (UnknownVerifier, TypeError, ValueError):
                 return None
-        unresolved: list[str] = []
+        results: list[tuple[str, Verification | None]] = []
         for pair in pairs:
             for side, url in pair.items():
                 match = regex.match(url)
                 assert match is not None
                 try:
-                    found = verifier.verify(url, match)
+                    verification = as_verification(verifier.verify(url, match), params.verify or "")
                 except Exception as exc:
-                    unresolved.append(f"{side}: {type(exc).__name__} while verifying {url}")
+                    results.append((f"{side}: {type(exc).__name__} while verifying {url}", None))
                     continue
-                if not found:
-                    unresolved.append(f"{side}: not found at {url}")
-        return unresolved
+                if verification.found:
+                    results.append((f"{side}: {verification.line()}", verification))
+                else:
+                    results.append((f"{side}: not found at {url}", verification))
+        return results
 
     def fix(self, params: Params) -> str:
         return (

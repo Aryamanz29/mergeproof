@@ -14,6 +14,7 @@ from mergeproof.checks.shell import Shell
 from mergeproof.checks.tests_changed import TestsChanged
 from mergeproof.context import CheckRun, Comment
 from mergeproof.report import Status
+from mergeproof.verifiers import Verification
 
 from .conftest import HEAD, make_context, run_check
 
@@ -110,13 +111,16 @@ def links_body(pairs, key="links"):
 
 
 class StubVerifier:
-    def __init__(self, known, raise_for=()):
+    def __init__(self, known, raise_for=(), rich=()):
         self.known = set(known)
         self.raise_for = set(raise_for)
+        self.rich = set(rich)
 
     def verify(self, url, match):
         if url in self.raise_for:
             raise RuntimeError("boom")
+        if url in self.rich:
+            return Verification(found=True, source="tracer", id="t1", size="14 spans", at="2026-09-14T17:02Z")
         return url in self.known
 
 
@@ -151,8 +155,18 @@ class TestEvidenceLinks:
     def test_verification_paths(self):
         ctx = make_context(body=links_body([("https://x/1", "https://x/2")]))
         check = EvidenceLinks()
-        check.verifier = StubVerifier({"https://x/1", "https://x/2"})
-        assert run_check(check, ctx, verify="stub").status == Status.PASS
+        check.verifier = StubVerifier({"https://x/1", "https://x/2"}, rich={"https://x/2"})
+        out = run_check(check, ctx, verify="stub")
+        assert out.status == Status.PASS
+        assert out.details == ["before: stub", "after: tracer · 14 spans · 2026-09-14T17:02Z"]
+        assert out.data["verified"][1] == {
+            "found": True,
+            "source": "tracer",
+            "id": "t1",
+            "at": "2026-09-14T17:02Z",
+            "size": "14 spans",
+            "facts": {},
+        }
         check.verifier = StubVerifier({"https://x/1"})
         out = run_check(check, ctx, verify="stub")
         assert out.status == Status.FAIL and "https://x/2" in out.details[0]

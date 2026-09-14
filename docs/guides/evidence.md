@@ -38,8 +38,18 @@ named groups, and a verifier:
 ```
 
 `http` ships in core (the URL answers 2xx). Anything vendor-specific is a verifier plugin; Langfuse
-and Braintrust ones live in `examples/plugins/` and are a dozen lines each. See
+and Braintrust ones live in `examples/plugins/` and are a few dozen lines each. See
 [Plugins](../extending/plugins.md).
+
+A verified link is more than a tick. The verifier reports what it found and the comment shows it
+next to the link, so a reviewer can tell a real trace from an empty one before opening it:
+
+```
+before: braintrust · mcp-internal · search · 3 spans · 2026-09-14T17:02:01Z
+after:  braintrust · mcp-internal · search · 14 spans · 2026-09-14T17:41:12Z
+```
+
+The same lines go into the [receipt](receipts.md) when the pull request merges.
 
 ## Human verification
 
