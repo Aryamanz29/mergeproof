@@ -15,6 +15,8 @@ Exit codes: 0 pass or warn, 1 fail, 2 pending, 3 usage or policy error.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import os
 import sys
 from pathlib import Path
@@ -22,7 +24,7 @@ from typing import NoReturn
 
 import httpx
 
-from mergeproof import __version__, engine, evidence, policy, render
+from mergeproof import __version__, engine, evidence, policy, receipt, render
 from mergeproof.checks.registry import Registry, load_registry
 from mergeproof.context import Context, ContextError
 from mergeproof.providers import git, github
@@ -108,6 +110,10 @@ def add_publish_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--review-comments", action="store_true", help="post what is needed as review comments on the files concerned"
     )
+    parser.add_argument(
+        "--receipt", action="store_true", help="when the pull request has merged, store the final report on a branch"
+    )
+    parser.add_argument("--receipt-branch", default=receipt.DEFAULT_BRANCH, metavar="BRANCH")
 
 
 def build_context(args: argparse.Namespace) -> Context:
@@ -159,6 +165,7 @@ def cmd_check(args: argparse.Namespace) -> int:
     ctx = build_context(args)
     report = engine.evaluate(pol, ctx, registry)
     report.policy_path = args.policy
+    report.policy_sha256 = policy_digest(args.policy)
     if args.output:
         Path(args.output).write_text(report.to_json(), encoding="utf-8")
     if not args.quiet:
@@ -169,25 +176,42 @@ def cmd_check(args: argparse.Namespace) -> int:
                 print(line)
     github.write_step_summary(render.report_markdown(report))
     github.write_output("verdict", report.verdict.value)
-    if args.comment or args.status or args.review_comments:
-        publish(report, comment=args.comment, status=args.status, review_comments=args.review_comments)
+    if args.comment or args.status or args.review_comments or args.receipt:
+        publish(
+            report,
+            comment=args.comment,
+            status=args.status,
+            review_comments=args.review_comments,
+            receipt=args.receipt,
+            receipt_branch=args.receipt_branch,
+        )
     return report.exit_code
 
 
-def publish(report: Report, comment: bool = True, status: bool = False, review_comments: bool = False) -> None:
-    """Report back to GitHub: the sticky comment, the commit status, review comments on files."""
+def publish(
+    report: Report,
+    comment: bool = True,
+    status: bool = False,
+    review_comments: bool = False,
+    receipt: bool = False,
+    receipt_branch: str = receipt.DEFAULT_BRANCH,
+) -> None:
+    """Report back to GitHub: the sticky comment, the commit status, review comments on files, the receipt."""
     if report.source != "github" or not report.repo or report.number is None or not report.head_sha:
         print("mergeproof: publishing needs a GitHub context; skipping", file=sys.stderr)
         return
     link = github.run_url()
+    receipt_url: str | None = None
     try:
         client = github.client_from_env()
+        if receipt and report.merged and report.merge_commit_sha:
+            receipt_url = store_receipt(client, report, link, receipt_branch)
         if comment:
             url = github.upsert_comment(
                 client,
                 report.repo,
                 report.number,
-                render.report_markdown(report, run_url=link),
+                render.report_markdown(report, run_url=link, receipt_url=receipt_url),
                 render.MARKER,
                 create=bool(report.matched),
             )
@@ -205,6 +229,44 @@ def publish(report: Report, comment: bool = True, status: bool = False, review_c
             print(f"mergeproof: review comments {summary}", file=sys.stderr)
     except (ContextError, httpx.HTTPError) as exc:
         die(f"could not publish the report: {exc}")
+
+
+def store_receipt(client: github.Client, report: Report, run_url: str | None, branch: str) -> str | None:
+    """Write the receipt; a missing permission is reported, not fatal, so the comment still lands."""
+    assert report.repo
+    try:
+        url = receipt.write(client, report.repo, receipt.build(report, run_url), branch)
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code in (403, 404):
+            print(
+                f"mergeproof: could not write the receipt to {branch} ({exc.response.status_code});"
+                " the workflow needs contents: write",
+                file=sys.stderr,
+            )
+            return None
+        raise
+    github.write_output("receipt", url)
+    print(f"mergeproof: receipt at {url}", file=sys.stderr)
+    return url
+
+
+def policy_digest(path: str) -> str:
+    try:
+        return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    except OSError:
+        return ""
+
+
+def cmd_receipt(args: argparse.Namespace) -> int:
+    repo = args.repo or os.environ.get("MERGEPROOF_REPO") or os.environ.get("GITHUB_REPOSITORY")
+    if not repo:
+        die("which repository? pass --repo OWNER/NAME")
+    try:
+        doc = receipt.read(github.client_from_env(), repo, args.key, args.branch)
+    except (LookupError, ContextError, httpx.HTTPError) as exc:
+        die(str(exc), code=1)
+    print(json.dumps(doc, indent=2) if args.json else receipt.summary(doc))
+    return 0
 
 
 def cmd_explain(args: argparse.Namespace) -> int:
@@ -251,7 +313,14 @@ def cmd_report(args: argparse.Namespace) -> int:
 
 
 def cmd_comment(args: argparse.Namespace) -> int:
-    publish(read_report(args.report), comment=True, status=args.status, review_comments=args.review_comments)
+    publish(
+        read_report(args.report),
+        comment=True,
+        status=args.status,
+        review_comments=args.review_comments,
+        receipt=args.receipt,
+        receipt_branch=args.receipt_branch,
+    )
     return 0
 
 
@@ -341,7 +410,16 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--status", action="store_true", help="also set the `mergeproof` commit status")
     p.add_argument("--check-run", action="store_true", help=argparse.SUPPRESS)  # removed in 0.8
     p.add_argument("--review-comments", action="store_true", help="also post review comments on the files concerned")
+    p.add_argument("--receipt", action="store_true", help="when the PR has merged, store the final report on a branch")
+    p.add_argument("--receipt-branch", default=receipt.DEFAULT_BRANCH, metavar="BRANCH")
     p.set_defaults(func=cmd_comment)
+
+    p = sub.add_parser("receipt", help="show what a merged pull request proved (by merge sha, #number or number)")
+    p.add_argument("key", help="merge commit sha, `#123` or `123`")
+    p.add_argument("--repo", help="OWNER/NAME; default from MERGEPROOF_REPO or GITHUB_REPOSITORY")
+    p.add_argument("--branch", default=receipt.DEFAULT_BRANCH, help="branch holding the receipts")
+    p.add_argument("--json", action="store_true", help="print the whole receipt document")
+    p.set_defaults(func=cmd_receipt)
 
     p = sub.add_parser("validate", help="check the policy file")
     add_policy_arg(p)

@@ -6,6 +6,7 @@ import sys
 import pytest
 
 from mergeproof.cli import main
+from mergeproof.providers import github
 
 POLICY = """\
 rules:
@@ -152,6 +153,7 @@ def test_command_surface_is_the_documented_one(capsys):
         "init",
         "checks",
         "agent-prompt",
+        "receipt",
     }
     assert "mcp" not in commands
 
@@ -242,3 +244,66 @@ def test_check_run_flag_is_refused(capsys):
         main(["comment", "-", "--check-run"])
     assert exc.value.code == 3
     assert "removed in 0.8" in capsys.readouterr().err
+
+
+def test_publish_writes_the_receipt_only_for_a_merged_pr(tmp_path, monkeypatch, capsys):
+    from mergeproof import receipt
+    from mergeproof.report import Report
+
+    report = Report(source="github", repo="o/r", number=7, head_sha="a" * 40, base_ref="main")
+    path = tmp_path / "report.json"
+    calls = []
+    monkeypatch.setattr(github, "client_from_env", lambda: object())
+    monkeypatch.setattr(github, "upsert_comment", lambda *a, **k: calls.append(("comment", a[3])) or "https://c/1")
+    monkeypatch.setattr(receipt, "write", lambda *a: calls.append("receipt") or "https://r/1")
+
+    path.write_text(report.to_json())
+    assert run("comment", path, "--receipt") == 0
+    assert [c for c in calls if c == "receipt"] == [], "an open PR gets no receipt"
+
+    calls.clear()
+    report.merged, report.merge_commit_sha, report.merged_by = True, "c" * 40, "lead"
+    path.write_text(report.to_json())
+    assert run("comment", path, "--receipt") == 0
+    assert calls[0] == "receipt" and "[receipt](https://r/1)" in calls[1][1]
+    assert "receipt at https://r/1" in capsys.readouterr().err
+
+
+def test_publish_survives_a_receipt_permission_error(tmp_path, monkeypatch, capsys):
+    import httpx
+
+    from mergeproof import receipt
+    from mergeproof.report import Report
+
+    report = Report(source="github", repo="o/r", number=7, head_sha="a" * 40, merged=True, merge_commit_sha="c" * 40)
+    path = tmp_path / "report.json"
+    path.write_text(report.to_json())
+    calls = []
+    monkeypatch.setattr(github, "client_from_env", lambda: object())
+    monkeypatch.setattr(github, "upsert_comment", lambda *a, **k: calls.append("comment") or "https://c/1")
+
+    def forbidden(*a):
+        request = httpx.Request("POST", "https://api.github.com/x")
+        raise httpx.HTTPStatusError("403", request=request, response=httpx.Response(403, request=request))
+
+    monkeypatch.setattr(receipt, "write", forbidden)
+    assert run("comment", path, "--receipt") == 0
+    assert calls == ["comment"]
+    assert "contents: write" in capsys.readouterr().err
+
+
+def test_receipt_command_prints_a_summary(monkeypatch, capsys):
+    from mergeproof import receipt
+    from mergeproof.report import Report
+
+    report = Report(source="github", repo="o/r", number=7, head_sha="a" * 40, merged=True, merge_commit_sha="c" * 40)
+    monkeypatch.setattr(github, "client_from_env", lambda: object())
+    monkeypatch.setattr(receipt, "read", lambda client, repo, key, branch: receipt.build(report))
+    monkeypatch.setenv("GITHUB_REPOSITORY", "o/r")
+    assert run("receipt", "#7") == 0
+    assert "#7 merged as ccccccc" in capsys.readouterr().out
+    assert run("receipt", "#7", "--json") == 0
+    assert json.loads(capsys.readouterr().out)["receipt"]["pull_request"] == 7
+    monkeypatch.setattr(receipt, "read", lambda *a: (_ for _ in ()).throw(LookupError("no receipt for ccccccc")))
+    assert run("receipt", "#7") == 1
+    assert "no receipt" in capsys.readouterr().err

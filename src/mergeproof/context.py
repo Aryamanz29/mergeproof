@@ -52,6 +52,10 @@ class Context(BaseModel):
     base_ref: str = "main"
     head_sha: str | None = None
     base_sha: str | None = None
+    merged: bool = False
+    merge_commit_sha: str | None = None
+    merged_at: str = ""
+    merged_by: str = ""
     root: str = "."
     files: list[ChangedFile] = Field(default_factory=list)
     comments: list[Comment] = Field(default_factory=list)

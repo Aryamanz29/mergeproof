@@ -159,6 +159,7 @@ Everything else is found in the pull request itself: the diff, the check runs, t
 | review comments | each open requirement on the file it concerns, updated as the PR changes, removed once satisfied |
 | job annotations | the same findings on the workflow run and in the diff |
 | JUnit and reviewdog files | for renderers you already use |
+| receipt | on merge, the final report is committed to a `mergeproof-receipts` branch; `mergeproof receipt <sha>` answers "what proved this change?" months later |
 
 ## Run without installing
 

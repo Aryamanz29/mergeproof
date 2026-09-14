@@ -8,6 +8,7 @@ mergeproof validate       check the policy file
 mergeproof init           write a starter policy
 mergeproof checks         list available checks and their parameters
 mergeproof agent-prompt   render an AGENTS.md section from the policy
+mergeproof receipt        what a merged pull request proved, by merge sha or #number
 mergeproof context        print the pull request context as JSON      (plumbing)
 mergeproof report         render a JSON report in another format      (plumbing)
 mergeproof comment        post a JSON report to the pull request      (plumbing)

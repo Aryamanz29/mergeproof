@@ -131,6 +131,7 @@ def test_fetch_builds_a_full_context():
     assert ctx.labels == ["bug"] and ctx.head_short == "aaaaaaa"
     assert [c.kind for c in ctx.comments] == ["comment", "review"]
     assert ctx.comments[1].state == "APPROVED" and ctx.comments[1].commit == "a" * 40
+    assert ctx.merged is False and ctx.merge_commit_sha is None
     assert ctx.check_runs[0].conclusion == "success" and ctx.check_runs[0].started_at == "2026-01-01T00:00:00Z"
     assert ctx.tree == ["src/a.py", "tests/test_a.py"]
     assert ctx.evidence().get("environment") == "staging"

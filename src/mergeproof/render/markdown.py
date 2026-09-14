@@ -94,12 +94,14 @@ def sentence(report: Report) -> str:
     return f"**{done} of {total} requirements satisfied**{where}. To merge:"
 
 
-def links(report: Report, run_url: str | None) -> str:
+def links(report: Report, run_url: str | None, receipt_url: str | None = None) -> str:
     items = []
     if report.repo and report.base_ref:
         items.append(f"[policy](https://github.com/{report.repo}/blob/{report.base_ref}/{report.policy_path})")
     if run_url:
         items.append(f"[details]({run_url})")
+    if receipt_url:
+        items.append(f"[receipt]({receipt_url})")
     items.append(f"[docs]({PROJECT_URL})")
     return " · ".join(items)
 
@@ -119,11 +121,14 @@ def requirement_rows(pairs: list[tuple[RuleResult, RequirementResult]]) -> list[
     return rows
 
 
-def report_markdown(report: Report, marker: bool = True, run_url: str | None = None) -> str:
+def report_markdown(
+    report: Report, marker: bool = True, run_url: str | None = None, receipt_url: str | None = None
+) -> str:
     """The sticky PR comment: a scorecard of rule pills, then only the work, then the rest folded."""
     lines: list[str] = [MARKER] if marker else []
     if not report.matched:
-        lines += [f"{badge(report)} &nbsp;No rules apply to this change. <sub>{links(report, run_url)}</sub>"]
+        tail = links(report, run_url, receipt_url)
+        lines += [f"{badge(report)} &nbsp;No rules apply to this change. <sub>{tail}</sub>"]
         return "\n".join(lines)
 
     pills = " ".join([badge(report), *(rule_pill(rule) for rule in report.matched)])
@@ -158,7 +163,7 @@ def report_markdown(report: Report, marker: bool = True, run_url: str | None = N
 
     lines.append(
         f"<sub>Updated {report.evaluated_at} · re-evaluated on push, label, comment and CI completion · "
-        f"`mergeproof explain` shows this locally · {links(report, run_url)}</sub>"
+        f"`mergeproof explain` shows this locally · {links(report, run_url, receipt_url)}</sub>"
     )
     return "\n".join(lines)
 

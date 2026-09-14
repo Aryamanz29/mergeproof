@@ -1,9 +1,10 @@
 # Copy to .github/workflows/mergeproof.yml. Re-runs whenever anything the gate reads can change:
 # the diff, the description, labels, CI results, and comments (where /verified and verdicts land).
+# `closed` is for the receipt: when the PR merges, the final report is stored on a branch.
 name: mergeproof
 on:
   pull_request:
-    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled, closed]
   issue_comment:
     types: [created, edited]
   check_suite:
@@ -15,7 +16,7 @@ jobs:
     if: github.event_name != 'issue_comment' || github.event.issue.pull_request
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write        # the receipt branch; `read` is enough without receipts
       pull-requests: write
       statuses: write
       checks: read

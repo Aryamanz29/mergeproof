@@ -1,0 +1,26 @@
+name: receipt
+
+# When a pull request merges, evaluate it one last time and store the report as
+# receipts/<merge sha>.json on the mergeproof-receipts branch. `mergeproof receipt <sha|#n>` reads it.
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  receipt:
+    if: github.event.pull_request.merged
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      statuses: write
+      checks: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          version: "."
+          comment: "true"
+          status: "false"
+          review-comments: "false"
+          pending-ok: "true"

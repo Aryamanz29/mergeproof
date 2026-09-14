@@ -137,3 +137,10 @@ def test_report_json_roundtrip(pol, registry):
     report = engine.evaluate(pol, make_context(files=["app/tools/x.py"]), registry)
     again = Report.from_json(report.to_json())
     assert again.verdict == report.verdict and again.rules == report.rules
+
+
+def test_report_carries_the_merge_from_the_context(pol, registry):
+    ctx = make_context(files=[], merged=True, merge_commit_sha="c" * 40, merged_at="t", merged_by="lead")
+    report = engine.evaluate(pol, ctx, registry)
+    assert (report.merged, report.merge_commit_sha, report.merged_by) == (True, "c" * 40, "lead")
+    assert engine.evaluate(pol, make_context(files=[]), registry).merged is False
