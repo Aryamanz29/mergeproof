@@ -118,6 +118,17 @@ Install the package next to mergeproof (the action's `plugins` input) and the po
 `check: tools.baseline`. The two plugins under `examples/plugins/` are complete examples with
 packaging and tests.
 
+### An evaluation check
+
+If your evaluation backend is not Braintrust or Langfuse, subclass `EvalScore` instead of `Check`:
+declare `id` and `source`, extend `Params` with what your API needs, and implement
+`fetch_run(ref, match, params) -> EvalRun` (id, name, timestamp, example count, `scores` by name).
+Reading the reference from the evidence block, comparing with the thresholds, the optional
+baseline, the explanation and the evidence template are all inherited. Raise `MissingCredentials`
+when you cannot authenticate and the requirement stays pending with your message; raise
+`ValueError` for a reference you cannot resolve and it fails with the message. The two plugins
+under `examples/plugins/` are the worked examples.
+
 ## A verifier
 
 A verifier resolves a link from `evidence.links` to an answer with provenance. It is a class

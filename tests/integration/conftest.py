@@ -28,14 +28,34 @@ def scenarios():
 
 
 class LangfuseStub(BaseHTTPRequestHandler):
-    """Answers the two Langfuse endpoints the verifier needs, for a fixed set of trace ids."""
+    """Answers the Langfuse endpoints the verifier and the eval check need, for fixed ids.
+
+    Traces `trace-before-1` and `trace-after-1` exist (for the links verifier). Dataset
+    `search-golden` has two runs: `pr-91` scores 0.9 and 0.8 on `correctness`, `pr-92` 0.6 and 0.5.
+    """
 
     known = {"trace-before-1", "trace-after-1"}
+    runs = {"pr-91": ["golden-1", "golden-2"], "pr-92": ["golden-3", "golden-4"]}
+    correctness = {"golden-1": 0.9, "golden-2": 0.8, "golden-3": 0.6, "golden-4": 0.5}
 
     def do_GET(self):
         prefix = "/api/public/traces/"
-        if self.path.startswith(prefix) and self.path[len(prefix) :] in self.known:
-            body = json.dumps({"id": self.path[len(prefix) :]}).encode()
+        run_prefix = "/api/public/datasets/search-golden/runs/"
+        trace_id = self.path[len(prefix) :] if self.path.startswith(prefix) else None
+        if trace_id in self.known:
+            body = json.dumps({"id": trace_id}).encode()
+            self.send_response(200)
+        elif trace_id in self.correctness:
+            scores = [{"name": "correctness", "value": self.correctness[trace_id]}]
+            body = json.dumps({"id": trace_id, "scores": scores}).encode()
+            self.send_response(200)
+        elif self.path.startswith(run_prefix) and self.path[len(run_prefix) :] in self.runs:
+            run = self.path[len(run_prefix) :]
+            items = [{"traceId": t} for t in self.runs[run]]
+            body = json.dumps(
+                {"id": f"run-{run}", "name": run, "createdAt": "2026-09-14T17:00:00Z", "datasetRunItems": items}
+            )
+            body = body.encode()
             self.send_response(200)
         else:
             body = b"{}"

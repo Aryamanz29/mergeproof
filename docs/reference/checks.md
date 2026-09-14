@@ -145,3 +145,38 @@ script printed, and it runs in the checkout of the base branch, not of the pull 
 try an idea, then read [when a shell check should become a plugin](../extending/plugins.md#when-a-shell-check-should-become-a-plugin).
 `mergeproof validate` notes every `shell` requirement; `mergeproof checks --usage` lists their
 commands.
+
+## Plugin checks
+
+### `braintrust.eval`, `langfuse.eval`
+
+An evaluation run named in the evidence block scores at least the thresholds given. For a prompt or
+model change, "traces exist" is the first question and "did the eval stay above the bar" is the
+second. Both checks share one base, `EvalScore`, so the parameters and the report are the same;
+only where the scores come from differs.
+
+```yaml
+- check: langfuse.eval
+  with:
+    scorers: { correctness: 0.8, safety: 0.95 }
+```
+
+| parameter | meaning |
+|---|---|
+| `key` | evidence field holding the run (default `eval`): an id, `<project>/<name>` or `<dataset>/<run>`, or a link |
+| `scorers` | scorer name to minimum score; every listed scorer must be present and at or above its minimum |
+| `max_regression` | with a second run under `baseline_key` (default `eval_baseline`), no scorer may drop by more than this |
+| `pattern` | regex a link must match; each plugin ships the right one |
+| `example` | placeholder shown in the evidence template |
+
+`braintrust.eval` reads an experiment: an id, an app link
+(`https://www.braintrust.dev/app/<org>/p/<project>/experiments/<name>`) or `<project>/<name>`, and
+takes the scores from `GET /v1/experiment/{id}/summarize`. Needs `BRAINTRUST_API_KEY`.
+`langfuse.eval` reads a dataset run, `<dataset name>/<run name>` or a link ending in
+`/datasets/<dataset>/runs/<run>`, and averages each scorer over the run's traces. Needs
+`LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`; the host comes from the link, `host` or
+`LANGFUSE_HOST`.
+
+Without credentials the requirement is pending with the variable names in the message. The
+outcome details carry the run (name, example count, time) and one line per scorer,
+`correctness 0.91 ≥ 0.85`, which the comment shows and the receipt keeps.

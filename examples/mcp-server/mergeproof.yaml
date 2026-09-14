@@ -70,6 +70,21 @@ rules:
           approve the pull request (or comment `/verified <7-char head sha>`). A new push asks
           for a fresh approval.
 
+  - id: prompt-change-needs-eval
+    description: A prompt or model change is evaluated on the golden dataset and stays above the bar.
+    when:
+      paths: ["prompts/**", "server/models.yaml"]
+    instructions: >
+      Run the `search-golden` dataset against the branch in Langfuse and paste the run under
+      `eval` in the evidence block. The run must score at least 0.8 on `correctness`.
+    require:
+      - check: langfuse.eval
+        name: golden dataset run
+        with:
+          key: eval
+          scorers: { correctness: 0.8 }
+          example: "https://langfuse.example.com/project/<project-id>/datasets/search-golden/runs/<run-name>"
+
   - id: automated-review
     description: The repository's review agent has looked at the change and had nothing blocking to say.
     when:

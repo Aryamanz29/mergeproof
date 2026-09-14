@@ -12,6 +12,7 @@ langfuse = "mergeproof_langfuse:LangfuseVerifier"
 
 [project.entry-points."mergeproof.checks"]
 "langfuse.traces" = "mergeproof_langfuse:LangfuseTraces"
+"langfuse.eval" = "mergeproof_langfuse:LangfuseEval"
 
 [build-system]
 requires = ["hatchling>=1.25"]

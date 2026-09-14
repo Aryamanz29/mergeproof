@@ -6,6 +6,7 @@ from mergeproof.checks.agent_verdict import AgentVerdict
 from mergeproof.checks.body import Body
 from mergeproof.checks.ci_job import CiJobPassed
 from mergeproof.checks.evidence_artifacts import EvidenceArtifacts
+from mergeproof.checks.eval_score import EvalRun, EvalScore, MissingCredentials
 from mergeproof.checks.evidence_field import EvidenceField
 from mergeproof.checks.evidence_links import EvidenceLinks
 from mergeproof.checks.files import FilesChanged
@@ -445,3 +446,81 @@ def test_all_checks_have_ids_and_descriptions(registry):
     for check_id, cls in registry.items():
         assert re.fullmatch(r"[a-z_]+(\.[a-z_]+)?", check_id)
         assert cls.description
+
+
+class StubEval(EvalScore):
+    id = "stub.eval"
+    source = "stub"
+    runs = {
+        "run-1": EvalRun(id="run-1", name="pr-7", at="2026-09-14T17:00:00Z", count=40, scores={"correctness": 0.91}),
+        "run-0": EvalRun(id="run-0", name="main", scores={"correctness": 0.95}),
+        "run-low": EvalRun(id="run-low", scores={"correctness": 0.4}),
+    }
+
+    class Params(EvalScore.Params):
+        pattern: str | None = r"^https://evals\.example\.com/runs/(?P<run>[\w-]+)"
+
+    def fetch_run(self, ref, match, params):
+        key = match.group("run") if match else ref
+        if key == "no-creds":
+            raise MissingCredentials("STUB_KEY is not set")
+        if key == "boom":
+            raise RuntimeError("backend down")
+        if key not in self.runs:
+            raise ValueError(f"no run {key!r}")
+        return self.runs[key]
+
+
+def eval_body(ref, baseline=None):
+    extra = f"\neval_baseline: {baseline}" if baseline else ""
+    return f"```evidence\neval: {ref}{extra}\n```"
+
+
+class TestEvalScore:
+    def test_scores_against_thresholds_with_provenance(self):
+        out = run_check(StubEval(), make_context(body=eval_body("run-1")), scorers={"correctness": 0.85})
+        assert out.status == Status.PASS and out.summary == "stub run scores correctness 0.91"
+        assert out.details == ["stub · pr-7 · 40 examples · 2026-09-14T17:00:00Z", "correctness 0.91 ≥ 0.85"]
+        assert out.data["scores"] == {"correctness": 0.91} and out.data["run"]["name"] == "pr-7"
+        by_url = make_context(body=eval_body("https://evals.example.com/runs/run-1"))
+        assert run_check(StubEval(), by_url, scorers={"correctness": 0.85}).status == Status.PASS
+
+    def test_below_bar_missing_scorer_and_regression(self):
+        out = run_check(StubEval(), make_context(body=eval_body("run-low")), scorers={"correctness": 0.85})
+        assert out.status == Status.FAIL and "correctness 0.40 is below 0.85" in out.summary
+        assert out.details[1] == "correctness 0.40 < 0.85" and out.fix and "`eval`" in out.fix
+        out = run_check(StubEval(), make_context(body=eval_body("run-1")), scorers={"safety": 0.9})
+        assert out.status == Status.FAIL and "safety: not scored" in out.summary
+        ctx = make_context(body=eval_body("run-1", baseline="run-0"))
+        out = run_check(StubEval(), ctx, scorers={"correctness": 0.85}, max_regression=0.02)
+        assert out.status == Status.FAIL and "dropped 0.04" in out.summary
+        assert (
+            out.details[1] == "correctness 0.91 ≥ 0.85 (baseline 0.95, -0.04)" and out.data["baseline"]["id"] == "run-0"
+        )
+        out = run_check(StubEval(), ctx, scorers={"correctness": 0.85}, max_regression=0.1)
+        assert out.status == Status.PASS
+
+    def test_missing_evidence_bad_link_credentials_and_errors(self):
+        check = StubEval()
+        assert run_check(check, make_context(body=""), scorers={"correctness": 0.8}).status == Status.FAIL
+        out = run_check(check, make_context(body=eval_body("https://evals.example.com/other/1")), scorers={"c": 0.8})
+        assert out.status == Status.FAIL and "does not look like a stub run link" in out.summary
+        out = run_check(check, make_context(body=eval_body("no-creds")), scorers={"c": 0.8})
+        assert out.status == Status.PENDING and "STUB_KEY" in out.summary
+        out = run_check(check, make_context(body=eval_body("boom")), scorers={"c": 0.8})
+        assert out.status == Status.ERROR and "RuntimeError" in out.summary
+        out = run_check(check, make_context(body=eval_body("nope")), scorers={"c": 0.8})
+        assert out.status == Status.FAIL and "no run 'nope'" in out.summary
+
+    def test_explain_and_template(self):
+        check = StubEval()
+        params = check.Params(scorers={"correctness": 0.8, "safety": 0.95}, max_regression=0.05)
+        assert check.explain(params) == (
+            "An evaluation run named under `eval` in the evidence block scores `correctness` ≥ 0.8, `safety` ≥ 0.95"
+            " on stub; with `eval_baseline`, no scorer drops by more than 0.05."
+        )
+        assert check.evidence_template(params) == {
+            "eval": "<experiment id or URL>",
+            "eval_baseline": "<experiment id or URL>",
+        }
+        assert check.evidence_template(check.Params(scorers={"c": 1})) == {"eval": "<experiment id or URL>"}
