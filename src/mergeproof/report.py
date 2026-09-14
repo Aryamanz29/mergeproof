@@ -63,6 +63,7 @@ class RequirementResult(BaseModel):
 class RuleResult(BaseModel):
     id: str
     description: str = ""
+    source: str = ""
     severity: Severity
     matched: bool
     files: list[str] = Field(default_factory=list)

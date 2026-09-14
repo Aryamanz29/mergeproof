@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Any
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
+from mergeproof.extends import ExtendsError, resolve
+
 if TYPE_CHECKING:
     from mergeproof.checks.registry import Registry
 
@@ -57,6 +59,7 @@ class Rule(BaseModel):
     severity: Severity = Severity.BLOCK
     require: list[Requirement] = Field(min_length=1)
     instructions: str | None = None
+    source: str = Field(default="", description="Set by `extends`: the file this rule was defined in")
 
     @model_validator(mode="after")
     def labels_are_unique(self) -> Rule:
@@ -74,7 +77,12 @@ class Policy(BaseModel):
     version: int = 1
     project: str | None = None
     evidence_block: str = "evidence"
+    extends: list[str] = Field(default_factory=list, description="Bases this policy was resolved from, in order")
     rules: list[Rule] = Field(min_length=1)
+
+    @property
+    def inherited(self) -> bool:
+        return bool(self.extends)
 
     @model_validator(mode="after")
     def ids_are_unique(self) -> Policy:
@@ -90,12 +98,21 @@ class PolicyError(ValueError):
 
 
 def loads(text: str, source: str = "<policy>") -> Policy:
+    """Parse a policy. `extends` entries are resolved relative to *source* when it is a path."""
     try:
         raw = yaml.safe_load(text)
     except yaml.YAMLError as exc:
         raise PolicyError(f"{source}: not valid YAML: {exc}") from None
     if raw is None:
         raise PolicyError(f"{source}: empty policy")
+    if isinstance(raw, dict) and "extends" in raw:
+        try:
+            raw = resolve(raw, source if source != "<policy>" else Path.cwd() / "mergeproof.yaml")
+        except ExtendsError as exc:
+            raise PolicyError(str(exc)) from None
+        for rule in raw.get("rules") or []:
+            if isinstance(rule, dict) and rule.get("source") == source:
+                rule["source"] = ""  # local rules need no provenance; only inherited ones do
     try:
         return Policy.model_validate(raw)
     except ValidationError as exc:

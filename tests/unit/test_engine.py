@@ -144,3 +144,9 @@ def test_report_carries_the_merge_from_the_context(pol, registry):
     report = engine.evaluate(pol, ctx, registry)
     assert (report.merged, report.merge_commit_sha, report.merged_by) == (True, "c" * 40, "lead")
     assert engine.evaluate(pol, make_context(files=[]), registry).merged is False
+
+
+def test_rule_results_carry_the_source(registry):
+    pol = policy.loads("rules:\n  - id: r\n    source: path:base.yaml\n    require: [{ check: files.changed }]\n")
+    report = engine.evaluate(pol, make_context(files=["x"]), registry)
+    assert report.rules[0].source == "path:base.yaml"

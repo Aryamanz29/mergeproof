@@ -77,6 +77,48 @@ links:
 
 `mergeproof template` prints the block a change still needs, with placeholders.
 
+## Inheritance: `extends`
+
+One organisation policy, many repositories. A policy may extend one or more bases and adjust them:
+
+```yaml
+extends: github:acme/policies/python-service.yaml@v1      # or a list; later bases win
+project: billing-api
+
+rules:
+  - id: source-needs-tests          # same id as a base rule: replaces it entirely
+    when: { paths: ["src/**/*.py"] }
+    require:
+      - check: tests.changed
+        with: { map: { "src/billing/{name}.py": "src/billing/tests/test_{name}*.py" } }
+
+  - id: changelog                   # switch a base rule off
+    enabled: false
+
+  - id: payments-need-owner-label   # add one of your own
+    when: { paths: ["src/billing/payments/**"] }
+    require:
+      - check: pr.labels
+        with: { any_of: ["payments-approved"] }
+```
+
+Two forms of base:
+
+| form | meaning |
+|---|---|
+| `github:OWNER/REPO/path/file.yaml@REF` | fetched from GitHub; `REF` must be a **commit sha or a version tag** (`v1`, `2.3.0`). A branch is refused, so a pull request cannot change its own gate by pushing to the policies repository. Add `#sha256=<digest>` to pin the content as well; then any ref is accepted and the digest is checked |
+| `path:relative/file.yaml` | a file in the same repository, relative to the extending file; for monorepos |
+
+Resolution is deterministic: bases in order, then the local file; `project` and `evidence_block`
+from the last file that sets them; rules keyed by `id`. Bases may extend other bases, five
+levels deep at most, and cycles are errors. Bases pinned by sha or digest are cached under
+`~/.cache/mergeproof` (or `MERGEPROOF_CACHE_DIR`), so CI does not refetch them. Private policy
+repositories are read with `GITHUB_TOKEN`.
+
+`mergeproof validate` lists which file each rule came from; `mergeproof explain` says it next
+to the rule heading. The worked example is
+[`examples/shared-policy`](https://github.com/Aryamanz29/mergeproof/tree/main/examples/shared-policy).
+
 ## Checks
 
 Every check and its parameters is listed in the [checks reference](../reference/checks.md).

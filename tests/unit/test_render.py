@@ -258,3 +258,13 @@ def test_satisfied_rows_show_what_was_found():
     text = render.report_markdown(Report(rules=[rule]))
     detail = "before: braintrust · 3 spans<br>after: braintrust · 14 spans \\| more"
     assert f"1 before/after pair, all verified<br><sub>{detail}</sub>" in text
+
+
+def test_explain_names_the_file_an_inherited_rule_came_from():
+    pol = policy.loads(
+        "rules:\n  - id: r\n    source: github:acme/policies/base.yaml@v1\n"
+        "    when: { paths: ['src/**'] }\n    require: [{ check: files.changed, with: { any_of: ['tests/**'] } }]\n"
+    )
+    report = engine.evaluate(pol, make_context(files=["src/a.py"]), builtin_registry())
+    text = render.explain_markdown(report, pol, explanations(pol, builtin_registry()))
+    assert "## r [block] <sub>from github:acme/policies/base.yaml@v1</sub>" in text

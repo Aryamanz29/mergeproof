@@ -369,8 +369,12 @@ def cmd_comment(args: argparse.Namespace) -> int:
 
 
 def cmd_validate(args: argparse.Namespace) -> int:
-    load_policy(args, load_registry())
+    pol = load_policy(args, load_registry())
     print(f"{args.policy}: ok")
+    if pol.inherited:
+        width = max(len(r.id) for r in pol.rules)
+        for rule in pol.rules:
+            print(f"  {rule.id.ljust(width)}  {rule.source or 'this file'}")
     return 0
 
 

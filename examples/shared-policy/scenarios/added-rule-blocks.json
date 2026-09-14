@@ -1,0 +1,11 @@
+{
+  "expected": "fail",
+  "context": {
+    "source": "github", "online": true, "repo": "acme/billing-api", "number": 14,
+    "title": "feat(payments): retry on timeout", "author": "dev", "labels": [],
+    "base_ref": "main", "head_sha": "4444444aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "base_sha": "0000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "body": "",
+    "files": [{"path": "src/billing/payments/retry.py", "status": "modified"}, {"path": "src/billing/tests/test_retry.py", "status": "modified"}],
+    "check_runs": []
+  }
+}

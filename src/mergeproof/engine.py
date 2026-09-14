@@ -52,6 +52,7 @@ def evaluate(policy: Policy, ctx: Context, registry: Registry) -> Report:
         result = RuleResult(
             id=rule.id,
             description=rule.description,
+            source=rule.source,
             severity=rule.severity,
             matched=matched,
             files=files,
