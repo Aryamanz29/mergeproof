@@ -11,3 +11,4 @@ build/
 htmlcov/
 mergeproof-report.json
 uv.lock
+site/
