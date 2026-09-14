@@ -92,7 +92,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.repository.default_branch }}   # policy from the base branch
-      - uses: Aryamanz29/mergeproof@v0
+      - uses: Aryamanz29/mergeproof@v1
         env:
           MERGEPROOF_PR_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
 ```

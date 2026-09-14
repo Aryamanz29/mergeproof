@@ -21,10 +21,10 @@
 === "GitHub Actions"
 
     ```yaml
-    - uses: Aryamanz29/mergeproof@v0
+    - uses: Aryamanz29/mergeproof@v1
     ```
 
-    `@v0` follows the latest 0.x release; pin `@vX.Y.Z` or a commit SHA for an exact one.
+    `@v1` follows the latest 1.x release; pin `@vX.Y.Z` or a commit SHA for an exact one.
 
 Requires Python 3.11 or newer and `git` on the PATH for local mode.
 
@@ -34,9 +34,9 @@ Vendor-specific verifiers and checks are separate packages. In CI, pass them to 
 `plugins` input; locally, `pip install` them next to mergeproof.
 
 ```yaml
-- uses: Aryamanz29/mergeproof@v0
+- uses: Aryamanz29/mergeproof@v1
   with:
-    plugins: "git+https://github.com/Aryamanz29/mergeproof@v0#subdirectory=examples/plugins/mergeproof-braintrust"
+    plugins: "git+https://github.com/Aryamanz29/mergeproof@v1#subdirectory=examples/plugins/mergeproof-braintrust"
 ```
 
 See [Plugins](../extending/plugins.md).

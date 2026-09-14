@@ -42,4 +42,4 @@ individual check modules) is internal. Import it if you must, and expect it to c
 ## Before 1.0
 
 Until 1.0 the same rules are followed in spirit: breaking changes are announced in the changelog
-with a migration line, and the floating `@v0` tag of the action only moves within 0.x.
+with a migration line, and the floating `@v0` tag of the action only moved within 0.x.

@@ -31,7 +31,7 @@ Copy [`examples/github-workflow.yml`](https://github.com/Aryamanz29/mergeproof/b
 Outputs: `verdict` (`pass`, `warn`, `pending`, `fail`), and the paths `report` (JSON), `junit`,
 `rdjson`. All four files are uploaded as the `mergeproof-report` artifact.
 
-Pin `@v0` to follow releases, or `@v0.2.0` for an exact one.
+Pin `@v1` to follow releases, or `@v1.0.0` for an exact one.
 
 ## Making it block: the ruleset
 
@@ -77,7 +77,7 @@ The action also writes **JUnit XML** (one suite per rule, one case per requireme
 gate:
 
 ```yaml
-      - uses: Aryamanz29/mergeproof@v0
+      - uses: Aryamanz29/mergeproof@v1
         id: gate
       - uses: EnricoMi/publish-unit-test-result-action@v2     # rich check run with counts and history
         if: always()
@@ -113,7 +113,7 @@ With the default token that is `github-actions`. To post as **mergeproof** with 
            with:
              app-id: ${{ vars.MERGEPROOF_APP_ID }}
              private-key: ${{ secrets.MERGEPROOF_APP_KEY }}
-         - uses: Aryamanz29/mergeproof@v0
+         - uses: Aryamanz29/mergeproof@v1
            with:
              github-token: ${{ steps.app.outputs.token }}
    ```
