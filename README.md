@@ -11,7 +11,6 @@
   <a href="https://pypi.org/project/mergeproof/"><img src="https://img.shields.io/pypi/v/mergeproof?color=7c3aed" alt="PyPI"></a>
   <a href="https://pypi.org/project/mergeproof/"><img src="https://img.shields.io/pypi/pyversions/mergeproof" alt="Python versions"></a>
   <a href="https://github.com/marketplace/actions/mergeproof"><img src="https://img.shields.io/badge/Marketplace-mergeproof-7c3aed?logo=github" alt="GitHub Marketplace"></a>
-  <a href="https://aryamanz29.github.io/mergeproof/"><img src="https://img.shields.io/badge/docs-aryamanz29.github.io%2Fmergeproof-1f2328" alt="Documentation"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license"></a>
 </p>
 
@@ -23,34 +22,46 @@
   <a href="CHANGELOG.md">Changelog</a>
 </p>
 
-`mergeproof` gates pull requests on **evidence**. One YAML file in the repository says what a change
-must prove before it merges: tests for the modules it touched, a green integration job, before/after
-links from a live environment, a human who opened them. CI enforces it and reports on the PR. Coding
-agents read the same file, so what they are told is what CI checks.
+---
 
-<p align="center"><img src="docs/assets/overview.svg" alt="One policy file drives CI, coding agents and reviewers" width="720"></p>
+A pull request says *"added tests, verified on staging"*. That costs nothing to type. `mergeproof`
+turns it into something CI can check: one YAML file in the repository says what a change must
+**prove** before it merges, the action checks the proof on every push, and the same file tells
+coding agents what to produce before they open the PR.
 
-## What a pull request sees
+<p align="center"><img src="docs/assets/pr-comment.png" alt="The mergeproof comment on a pull request: one pill per rule, the one requirement still missing with what to do, and the satisfied ones underneath" width="820"></p>
 
-<p align="center"><img src="docs/assets/pr-comment.svg" alt="The mergeproof scorecard comment on a pull request" width="800"></p>
+<p align="center"><sub>A real comment. One pill per rule, then only what blocks the merge and what to do about it; the rest is the receipt.</sub></p>
 
-- **One comment**, updated in place. A pill per rule coloured by its worst requirement, one sentence,
-  then only what blocks the merge and what to do about it. Satisfied and warning requirements follow
-  as the receipt. Nothing is collapsed.
-- **One commit status**, `mergeproof`, in the merge box. Require that single context and the policy
-  decides what stands behind it, CI jobs included.
-- **Review comments on the files concerned.** A missing test is posted on the source file it is
-  missing for, updated as the PR changes and removed once satisfied.
+## How it works
 
-Locally, `mergeproof explain` prints the same list for the working tree, so people and agents see it
-before they push.
+```mermaid
+flowchart LR
+    policy["<b>mergeproof.yaml</b><br/>rules: when a change touches X,<br/>it must prove Y"]
+    agent["contributor or coding agent<br/><code>mergeproof explain</code>"]
+    pr["pull request<br/>diff · CI runs · evidence block · reviews"]
+    gate["<b>mergeproof</b> action"]
+    verifiers["verifiers<br/>http · Langfuse · Braintrust · yours"]
+    out["scorecard comment<br/>commit status <code>mergeproof</code><br/>review comments on the files"]
+
+    policy --> agent --> pr --> gate --> out
+    policy --> gate
+    gate <-.->|links are looked up<br/>at their source| verifiers
+```
+
+- **One policy file.** A rule pairs a `when` (paths, labels, title, base branch) with what it
+  `require`s: checks with parameters. Nothing to script.
+- **Evidence, not attestation.** Tests must be in the diff. Jobs must be green on the head commit.
+  Links must resolve at their source. Sign-off is a human approval bound to the commit; a new push
+  invalidates it.
+- **One required status.** Rulesets require `mergeproof`; the policy decides what stands behind it,
+  CI jobs included. When no rule applies, nothing is posted and nothing blocks.
+- **Agents read the same file.** They learn what to prove and check their own work before opening
+  the PR. They cannot approve anything.
 
 ## Quickstart
 
-```sh
-pip install mergeproof        # or: uv tool install mergeproof
-mergeproof init               # writes a starter mergeproof.yaml
-```
+**1. Write the policy.** `mergeproof init` writes a starter; this is the shape:
 
 ```yaml
 # mergeproof.yaml
@@ -74,7 +85,10 @@ rules:
       - check: evidence.links
         with: { key: traces, min_pairs: 1, verify: http }
       - check: review.human_verified
+        with: { accept_approval: true }
 ```
+
+**2. Add the workflow.** Full version with comments: [`examples/github-workflow.yml`](examples/github-workflow.yml).
 
 ```yaml
 # .github/workflows/mergeproof.yml
@@ -90,22 +104,53 @@ jobs:
     permissions: { contents: read, pull-requests: write, statuses: write, checks: read }
     steps:
       - uses: actions/checkout@v4
-        with: { ref: ${{ github.event.repository.default_branch }} }
+        with: { ref: ${{ github.event.repository.default_branch }} }   # policy from the base branch
       - uses: Aryamanz29/mergeproof@v0
         env:
           MERGEPROOF_PR_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
 ```
 
-Then require the `mergeproof` status on your default branch. The
-[quickstart](https://aryamanz29.github.io/mergeproof/getting-started/quickstart/) walks through all
-three steps; the full workflow with comments is
-[`examples/github-workflow.yml`](examples/github-workflow.yml).
+**3. Require the `mergeproof` status** on your default branch. Until you do, the gate only
+reports, which is the right way to [roll it out](https://aryamanz29.github.io/mergeproof/guides/rollout/).
+
+## Before you push
+
+`mergeproof explain` runs the policy against the working tree and prints what is still missing,
+in the same words the PR comment will use. Agents run it in their loop; people run it before
+opening the PR.
+
+<p align="center"><img src="docs/assets/explain.png" alt="mergeproof explain in a terminal: the rule that applies, the requirement that is missing, and the fix" width="820"></p>
+
+```sh
+pip install mergeproof            # or: uv tool install mergeproof, uvx mergeproof
+mergeproof explain                # what this diff must prove
+mergeproof template               # the evidence block still missing, ready to paste
+mergeproof agent-prompt >> AGENTS.md
+```
+
+## What it can check
+
+| check | proves |
+|---|---|
+| `tests.changed` | changed source files come with changed tests, mapped by `{capture}` globs; `existing_only` skips modules that have no test file yet |
+| `ci.job_passed` | a named check run succeeded on the head commit (newest run per name; superseded runs are ignored) |
+| `evidence.links` | before/after link pairs in the evidence block, verified at their source by a pluggable verifier |
+| `evidence.field` | a key in the evidence block exists and has an acceptable value |
+| `review.human_verified` | a reviewer other than the author approved the head commit, or posted `/verified <sha>` |
+| `agent.verdict` | an allowed automated reviewer posted a head-bound verdict block |
+| `files.changed` | the change touches, or avoids, certain paths |
+| `pr.labels`, `pr.body` | labels present or absent; description sections, regex, length |
+| `shell` | a command from the policy exits 0 |
+
+Parameters for each: `mergeproof checks`, or the
+[checks reference](https://aryamanz29.github.io/mergeproof/reference/checks/). Anything
+vendor-specific is a plugin: the [Langfuse](examples/plugins/mergeproof-langfuse) and
+[Braintrust](examples/plugins/mergeproof-braintrust) verifiers are a dozen lines each.
 
 ## Evidence
 
-Anything a check can inspect: a changed file, a green job, a link that resolves, a comment from a
-person. What the contributor supplies goes in the PR description as a fenced block that agents can
-write and machines can read:
+What the contributor supplies goes in the PR description as a fenced block that agents can write
+and machines can read. `mergeproof template` prints the one a change still needs.
 
 ````markdown
 ```evidence
@@ -117,37 +162,17 @@ traces:
 ```
 ````
 
-Links are verified at their source: `http` ships in core, Langfuse and Braintrust verifiers are
-[plugins](https://aryamanz29.github.io/mergeproof/extending/plugins/) of a dozen lines each. Human
-sign-off is `/verified <sha7>` from someone other than the author; a new push invalidates it.
+Everything else is found in the pull request itself: the diff, the check runs, the reviews.
 
-## Built-in checks
+## Where it reports
 
-| check | proves |
+| channel | what |
 |---|---|
-| `tests.changed` | changed source files come with changed tests, mapped by `{capture}` globs |
-| `files.changed` | the change touches, or avoids, certain paths |
-| `evidence.field` | a key in the evidence block exists and has an acceptable value |
-| `evidence.links` | before/after link pairs, optionally verified at their source |
-| `ci.job_passed` | a named check run on the head commit succeeded |
-| `review.human_verified` | a non-author human posted `/verified <sha>`, bound to the head commit |
-| `agent.verdict` | an allowed automated reviewer posted a head-bound verdict block |
-| `pr.labels`, `pr.body` | labels present or absent; description sections, regex, length |
-| `shell` | a command from the policy exits 0 |
-
-Parameters for each: `mergeproof checks`, or the
-[checks reference](https://aryamanz29.github.io/mergeproof/reference/checks/).
-
-## For coding agents
-
-```sh
-mergeproof agent-prompt >> AGENTS.md     # the rules, rendered from the policy
-mergeproof explain                       # what the current diff still has to prove
-```
-
-Agents learn what to prove and check their own work before opening the PR. They cannot approve
-anything: human verification is the one requirement no token of theirs can satisfy. See
-[Coding agents](https://aryamanz29.github.io/mergeproof/guides/agents/).
+| comment | the scorecard above, one per PR, updated in place |
+| commit status `mergeproof` | `4 of 5 requirements satisfied, 1 missing` in the merge box; the context to require |
+| review comments | each open requirement on the file it concerns, updated as the PR changes, removed once satisfied |
+| job annotations | the same findings on the workflow run and in the diff |
+| JUnit and reviewdog files | for renderers you already use |
 
 ## Run without installing
 
@@ -160,18 +185,15 @@ Images are tagged `X.Y.Z`, `X.Y`, `X` and `latest` per release, `edge` for `main
 
 ## Documentation
 
-The site at **[aryamanz29.github.io/mergeproof](https://aryamanz29.github.io/mergeproof/)** covers:
+**[aryamanz29.github.io/mergeproof](https://aryamanz29.github.io/mergeproof/)**
 
-- [Getting started](https://aryamanz29.github.io/mergeproof/getting-started/install/): install, the
-  three-step setup, what a pull request sees.
-- [Guides](https://aryamanz29.github.io/mergeproof/guides/policy/): writing a policy, evidence,
-  GitHub setup, coding agents, rolling it out without blocking anyone, the examples.
-- [Reference](https://aryamanz29.github.io/mergeproof/reference/checks/): every check and parameter,
-  the command line, the action's inputs and outputs.
-- [Extending](https://aryamanz29.github.io/mergeproof/extending/plugins/): checks and verifiers as
-  plugins.
-- [Project](https://aryamanz29.github.io/mergeproof/project/contributing/): contributing,
-  releasing, FAQ.
+| | |
+|---|---|
+| [Getting started](https://aryamanz29.github.io/mergeproof/getting-started/install/) | install, the three-step setup, what a pull request sees |
+| [Guides](https://aryamanz29.github.io/mergeproof/guides/policy/) | writing a policy, evidence, GitHub setup, coding agents, rolling out without blocking anyone, the examples |
+| [Reference](https://aryamanz29.github.io/mergeproof/reference/checks/) | every check and parameter, the command line, the action's inputs and outputs |
+| [Extending](https://aryamanz29.github.io/mergeproof/extending/plugins/) | checks and verifiers as plugins |
+| [Project](https://aryamanz29.github.io/mergeproof/project/contributing/) | contributing, releasing, FAQ |
 
 ## How it compares
 
@@ -181,6 +203,7 @@ data. Checklist actions fail on unticked boxes. Hosted evidence gates evaluate y
 their servers. `mergeproof` is declarative, has a notion of evidence that can be verified at its
 source, explains itself to agents, and runs entirely in your CI.
 
-## License
+## Contributing
 
-MIT. Contributions welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
+`make setup`, then `make lint typecheck test`. Pull requests here are gated by this repository's own
+`mergeproof.yaml`. See [CONTRIBUTING.md](CONTRIBUTING.md). MIT licensed.
