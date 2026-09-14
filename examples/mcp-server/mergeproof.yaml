@@ -64,10 +64,11 @@ rules:
           example: "https://langfuse.example.com/project/<project-id>/traces/<trace-id>"
       - check: review.human_verified
         name: reviewer opened the traces
-        with: { phrase: "/verified", bind_to_head: true }
+        with: { accept_approval: true, bind_to_head: true }
         instructions: >
           Reviewer: open both traces, confirm the after-trace shows the intended behaviour, then
-          comment `/verified <7-char head sha>`. A new push invalidates the verification.
+          approve the pull request (or comment `/verified <7-char head sha>`). A new push asks
+          for a fresh approval.
 
   - id: automated-review
     description: The repository's review agent has looked at the change and had nothing blocking to say.

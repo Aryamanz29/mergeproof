@@ -103,6 +103,7 @@ def fetch(client: Client, repo: str, number: int, root: str = ".") -> Context:
             created_at=r.get("submitted_at", ""),
             kind="review",
             state=r.get("state"),
+            commit=r.get("commit_id"),
             url=r.get("html_url"),
         )
         for r in client.paginate(f"/repos/{repo}/pulls/{number}/reviews")

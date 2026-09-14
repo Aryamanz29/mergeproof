@@ -91,7 +91,10 @@ def test_fetch_builds_a_full_context():
     )
     respx.get(f"{api}/repos/o/r/pulls/7/reviews").mock(
         return_value=httpx.Response(
-            200, json=[{"user": {"login": "lead"}, "body": "", "state": "APPROVED", "submitted_at": "t"}]
+            200,
+            json=[
+                {"user": {"login": "lead"}, "body": "", "state": "APPROVED", "submitted_at": "t", "commit_id": "a" * 40}
+            ],
         )
     )
     respx.get(f"{api}/repos/o/r/pulls/7/comments").mock(return_value=httpx.Response(200, json=[]))
@@ -127,6 +130,7 @@ def test_fetch_builds_a_full_context():
     assert ctx.online and ctx.source == "github" and ctx.repo == "o/r" and ctx.number == 7
     assert ctx.labels == ["bug"] and ctx.head_short == "aaaaaaa"
     assert [c.kind for c in ctx.comments] == ["comment", "review"]
+    assert ctx.comments[1].state == "APPROVED" and ctx.comments[1].commit == "a" * 40
     assert ctx.check_runs[0].conclusion == "success" and ctx.check_runs[0].started_at == "2026-01-01T00:00:00Z"
     assert ctx.tree == ["src/a.py", "tests/test_a.py"]
     assert ctx.evidence().get("environment") == "staging"
