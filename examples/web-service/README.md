@@ -14,4 +14,5 @@ Scenarios:
 |---|---|
 | `migration-missing-rollback.json` | fail |
 | `ui-change-complete.json` | pass |
+| `ui-change-without-preview.json` | fail: screenshots present, no preview link (a `single` artifact) |
 | `auth-change-awaiting-security.json` | pending |

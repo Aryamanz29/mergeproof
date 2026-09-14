@@ -9,11 +9,16 @@ contributor has to supply, lives in the PR description as a fenced YAML block.
 ````markdown
 ```evidence
 environment: staging
-image: registry.example.com/app:pr-77-4444444
+preview: https://pr-77.preview.example.com
 traces:
   - what: search with an empty query
     before: https://www.braintrust.dev/app/acme/p/mcp-internal/logs?r=b6f98332e178f658
     after:  https://www.braintrust.dev/app/acme/p/mcp-internal/logs?r=db0100b2192984af
+screens:
+  - what: cart
+    url: https://shots.example.com/pr77-cart.png
+  - what: checkout
+    url: https://shots.example.com/pr77-checkout.png
 ```
 ````
 
@@ -24,15 +29,46 @@ it.
 `mergeproof template` prints exactly the block a change still needs, with placeholders. The same
 block appears in the PR comment while it is missing.
 
-## Verified links
+## Values and artifacts
 
-A pasted link should have to be real. `evidence.links` accepts before/after pairs, a regex with
-named groups, and a verifier:
+Two checks read the block. `evidence.field` looks at a value: it exists, equals something, matches
+a regex, is one of a list. `evidence.artifacts` looks at links, and asks what *kind* of artifact
+they are:
+
+| kind | what it says | example |
+|---|---|---|
+| `pair` | the behaviour before the change and after it | two traces, two screenshots of the same screen |
+| `single` | one thing to open | a preview deployment, a dashboard, a report |
+| `set` | one link per item in a list | every screen a UI change touched, one log per environment |
 
 ```yaml
-- check: evidence.links
+- check: evidence.artifacts
+  name: before/after traces
+  with: { key: traces, kind: pair, min_items: 1, verify: braintrust }
+
+- check: evidence.artifacts
+  name: preview deployment
+  with: { key: preview, kind: single, pattern: "^https://" }
+
+- check: evidence.artifacts
+  name: a screenshot per screen
+  with: { key: screens, kind: set, min_items: 2, pattern: "\\.png$" }
+```
+
+The kind decides the shape the block must have and what the template prints. `evidence.links`
+is the `pair` kind under its own name, with `min_pairs` instead of `min_items`; it is what older
+policies and the Langfuse and Braintrust plugins use, and it is not going anywhere.
+
+## Verified links
+
+A pasted link should have to be real. Any kind takes a `pattern` with named groups and a
+`verify`:
+
+```yaml
+- check: evidence.artifacts
   with:
     key: traces
+    kind: pair
     pattern: "^(?P<host>https?://[^/]+)/project/(?P<project>[^/]+)/traces/(?P<trace_id>[\\w-]+)"
     verify: langfuse
 ```
@@ -62,7 +98,8 @@ looks for a phrase, `/verified` by default, from a person other than the author,
 ```
 
 A new push changes the sha and invalidates the verification. `allowed_users` narrows who may
-verify; `require_review_state: APPROVED` demands it inside an approving review.
+verify; `require_review_state: APPROVED` demands it inside an approving review, and
+`accept_approval: true` lets an approving review of the head commit count on its own.
 
 ## Automated reviewers as witnesses
 

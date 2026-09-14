@@ -120,7 +120,8 @@ mergeproof agent-prompt >> AGENTS.md
 |---|---|
 | `tests.changed` | changed source files come with changed tests, mapped by `{capture}` globs; `existing_only` skips modules that have no test file yet |
 | `ci.job_passed` | a named check run succeeded on the head commit (newest run per name; superseded runs are ignored) |
-| `evidence.links` | before/after link pairs in the evidence block, verified at their source by a pluggable verifier |
+| `evidence.artifacts` | links in the evidence block by kind: before/after `pair`, one `single`, or a `set`; verified at their source by a pluggable verifier |
+| `evidence.links` | the `pair` kind under its own name: before/after link pairs |
 | `evidence.field` | a key in the evidence block exists and has an acceptable value |
 | `review.human_verified` | a reviewer other than the author approved the head commit, or posted `/verified <sha>` |
 | `agent.verdict` | an allowed automated reviewer posted a head-bound verdict block |
