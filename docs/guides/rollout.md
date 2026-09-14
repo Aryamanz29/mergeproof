@@ -76,4 +76,6 @@ Two rules carry most of the value in a codebase that agents change:
     - check: review.human_verified
 ```
 
-Everything else can start as a warning.
+Everything else can start as a warning. For repositories where prompts or models change, the
+third rule worth having early is an evaluation bar on `prompts/**` (`braintrust.eval` or
+`langfuse.eval`), so a prompt tweak comes with a golden-dataset run that is still above it.

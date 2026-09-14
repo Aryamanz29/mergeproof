@@ -12,6 +12,7 @@ braintrust = "mergeproof_braintrust:BraintrustVerifier"
 
 [project.entry-points."mergeproof.checks"]
 "braintrust.traces" = "mergeproof_braintrust:BraintrustTraces"
+"braintrust.eval" = "mergeproof_braintrust:BraintrustEval"
 
 [build-system]
 requires = ["hatchling>=1.25"]

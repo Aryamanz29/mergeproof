@@ -35,6 +35,8 @@ plugin (`verify: langfuse`). Writing a verifier for the other two is a dozen lin
 | `fix-verified.json` | pass |
 | `fix-approved.json` | pass: the reviewer approved the head commit instead of posting the phrase |
 | `fix-approved-before-last-push.json` | pending: the approval is on an older commit |
+| `prompt-change-above-the-bar.json` | pass: a prompt change with a golden-dataset run scoring 0.85 on `correctness` |
+| `prompt-change-below-the-bar.json` | fail: the same change with a run scoring 0.55 |
 
 The trace links in the scenarios use `{{BASE_URL}}`; the integration test substitutes a local
 Langfuse-compatible stub so verification runs for real without network access.

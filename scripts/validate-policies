@@ -1,9 +1,14 @@
 #!/bin/sh
 # Validate every policy file passed on the command line. Used by pre-commit.
+# The example plugins are installed alongside, since the examples use their checks.
 set -eu
+here=$(cd "$(dirname "$0")/.." && pwd)
 status=0
 for policy in "$@"; do
-    if ! uv run --quiet mergeproof validate --policy "$policy"; then
+    if ! uv run --quiet \
+        --with "$here/examples/plugins/mergeproof-langfuse" \
+        --with "$here/examples/plugins/mergeproof-braintrust" \
+        mergeproof validate --policy "$policy"; then
         status=1
     fi
 done

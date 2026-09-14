@@ -1,0 +1,24 @@
+{
+  "expected": "fail",
+  "context": {
+    "source": "github",
+    "online": true,
+    "repo": "example/mcp-server",
+    "author": "dev",
+    "labels": [],
+    "base_ref": "main",
+    "base_sha": "0000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "files": [
+      {
+        "path": "prompts/search.md",
+        "status": "modified"
+      }
+    ],
+    "check_runs": [],
+    "comments": [],
+    "number": 92,
+    "head_sha": "9292929aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "title": "feat(prompts): shorter search prompt",
+    "body": "## Summary\n\nShortens the search prompt.\n\n```evidence\neval: {{BASE_URL}}/project/p1/datasets/search-golden/runs/pr-92\n```\n"
+  }
+}

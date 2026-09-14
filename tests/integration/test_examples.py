@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -28,7 +29,8 @@ def test_scenario_produces_expected_verdict(scenario: Path, tmp_path: Path, lang
     context_file = tmp_path / "context.json"
     context_file.write_text(context)
 
-    proc = run_cli("check", "--policy", str(policy), "--context", str(context_file), "--format", "json")
+    env = {**os.environ, "LANGFUSE_PUBLIC_KEY": "pk-stub", "LANGFUSE_SECRET_KEY": "sk-stub"}
+    proc = run_cli("check", "--policy", str(policy), "--context", str(context_file), "--format", "json", env=env)
     assert proc.returncode == EXIT_FOR[data["expected"]], proc.stdout + proc.stderr
     report = json.loads(proc.stdout)
     verdict = report_verdict(report)
