@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from urllib.parse import quote
+
 from mergeproof import evidence
-from mergeproof.policy import Policy, Severity
-from mergeproof.report import Report, Status
+from mergeproof.policy import Policy
+from mergeproof.report import Report, RequirementResult, RuleResult, Status
 
 MARKER = "<!-- mergeproof-report -->"
 BADGE_LOGO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTYgMjU2Ij48cGF0aCBkPSJNMTI4IDE4IEwyMTggNTAgVjEyNiBDMjE4IDE4NCAxNzggMjI0IDEyOCAyNDIgQzc4IDIyNCAzOCAxODQgMzggMTI2IFY1MCBaIiBmaWxsPSIjZmZmIi8+PHBhdGggZD0iTTkyIDg0IEM5MiAxMjYgMTI4IDExOCAxMjggMTY2IE0xNjQgODQgQzE2NCAxMjYgMTI4IDExOCAxMjggMTY2IiBmaWxsPSJub25lIiBzdHJva2U9IiM2ZDI4ZDkiIHN0cm9rZS13aWR0aD0iMTIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxjaXJjbGUgY3g9IjkyIiBjeT0iODIiIHI9IjE0IiBmaWxsPSIjNmQyOGQ5Ii8+PGNpcmNsZSBjeD0iMTY0IiBjeT0iODIiIHI9IjE0IiBmaWxsPSIjNmQyOGQ5Ii8+PGNpcmNsZSBjeD0iMTI4IiBjeT0iMTcyIiByPSIyNCIgZmlsbD0iIzZkMjhkOSIvPjxwYXRoIGQ9Ik0xMTYgMTcyIEwxMjUgMTgxIEwxNDEgMTYzIiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+"  # noqa: E501
@@ -27,19 +29,56 @@ WORD = {
 }
 
 BADGE_COLOR = {Status.PASS: "2ea043", Status.WARN: "dbab09", Status.PENDING: "dbab09", Status.FAIL: "cf222e"}
+PILL_COLOR = {
+    Status.PASS: "2ea043",
+    Status.SKIP: "6e7781",
+    Status.WARN: "dbab09",
+    Status.PENDING: "dbab09",
+    Status.FAIL: "cf222e",
+    Status.ERROR: "cf222e",
+}
+LABEL_COLOR = "1f2328"
+
+
+def shield(label: str, value: str, color: str, logo: str | None = None, alt: str | None = None) -> str:
+    """A shields.io badge as a Markdown image. Dashes and underscores are escaped the way shields expects."""
+
+    def part(text: str) -> str:
+        return quote(text.replace("-", "--").replace("_", "__"), safe="")
+
+    url = f"https://img.shields.io/badge/{part(label)}-{part(value)}-{color}?style=flat-square&labelColor={LABEL_COLOR}"
+    if logo:
+        url += f"&logo={logo}"
+    return f"![{alt or f'{label}: {value}'}]({url})"
+
+
+def status_pill(status: Status) -> str:
+    return shield("", WORD[status].strip("*"), PILL_COLOR[status], alt=WORD[status].strip("*")).replace(
+        "badge/-", "badge/"
+    )
+
+
+def rule_pill(rule: RuleResult) -> str:
+    """One pill per rule: `tool tests | 2 / 2` in the colour of its worst requirement."""
+    statuses = [req.effective for req in rule.requirements]
+    satisfied = sum(1 for st in statuses if st in (Status.PASS, Status.SKIP))
+    if any(st in (Status.FAIL, Status.ERROR) for st in statuses):
+        color, value = PILL_COLOR[Status.FAIL], f"{satisfied} / {len(statuses)}"
+    elif Status.PENDING in statuses:
+        color, value = PILL_COLOR[Status.PENDING], f"{satisfied} / {len(statuses)}"
+    elif Status.WARN in statuses:
+        color, value = PILL_COLOR[Status.WARN], "warn"
+    else:
+        color, value = PILL_COLOR[Status.PASS], f"{satisfied} / {len(statuses)}"
+    return shield(rule.id.replace("-", " "), value, color)
 
 
 def badge(report: Report) -> str:
-    """One image: the shield, the name, and the count, coloured by verdict."""
     total = len(report.requirements)
     counts = report.counts()
     done = counts[Status.PASS] + counts[Status.SKIP]
-    value = f"{done}%2F{total}%20satisfied" if total else "no%20rules%20apply"
-    color = BADGE_COLOR[report.verdict]
-    return (
-        f"![mergeproof: {done} of {total} satisfied]"
-        f"(https://img.shields.io/badge/mergeproof-{value}-{color}?style=flat-square&labelColor=1f2328&logo={BADGE_LOGO})"
-    )
+    value = f"{done} / {total}" if total else "no rules apply"
+    return shield("mergeproof", value, BADGE_COLOR[report.verdict], logo=BADGE_LOGO, alt=f"mergeproof: {value}")
 
 
 def sentence(report: Report) -> str:
@@ -51,82 +90,75 @@ def sentence(report: Report) -> str:
         repo_url = f"https://github.com/{report.repo}" if report.repo else PROJECT_URL
         where = f" for [`{report.head_sha[:7]}`]({repo_url}/commit/{report.head_sha})"
     if done == total:
-        return f"**All {total} requirements are satisfied**{where}."
-    tail = report.headline().split(" satisfied", 1)[1].lstrip(", ")
-    return f"**{total - done} of {total} requirements need attention**{where}: {tail}."
+        return f"**All {total} requirements satisfied**{where}."
+    return f"**{done} of {total} requirements satisfied**{where}. To merge:"
 
 
-def header(report: Report, run_url: str | None) -> str:
-    links = []
+def links(report: Report, run_url: str | None) -> str:
+    items = []
     if report.repo and report.base_ref:
-        links.append(f"[policy](https://github.com/{report.repo}/blob/{report.base_ref}/{report.policy_path})")
+        items.append(f"[policy](https://github.com/{report.repo}/blob/{report.base_ref}/{report.policy_path})")
     if run_url:
-        links.append(f"[details]({run_url})")
-    links.append(f"[docs]({PROJECT_URL})")
-    return f"{badge(report)} &nbsp;<sub>{' · '.join(links)}</sub>"
+        items.append(f"[details]({run_url})")
+    items.append(f"[docs]({PROJECT_URL})")
+    return " · ".join(items)
+
+
+def what_to_do(req: RequirementResult) -> str:
+    text = req.outcome.fix or req.outcome.summary
+    extra = [d for d in req.outcome.details[:2]]
+    if extra:
+        text += " " + " ".join(f"<br><sub>{d}</sub>" for d in extra)
+    return text
+
+
+def requirement_rows(pairs: list[tuple[RuleResult, RequirementResult]]) -> list[str]:
+    rows = ["| Status | Requirement | Detail |", "|:--|:--|:--|"]
+    for rule, req in pairs:
+        rows.append(f"| {status_pill(req.effective)} | {req.label}<br><sub>{rule.id}</sub> | {req.outcome.summary} |")
+    return rows
 
 
 def report_markdown(report: Report, marker: bool = True, run_url: str | None = None) -> str:
-    """The sticky PR comment: a header, one sentence, one table, next steps only when needed."""
+    """The sticky PR comment: a scorecard of rule pills, then only the work, then the rest folded."""
     lines: list[str] = [MARKER] if marker else []
-    lines += [header(report, run_url), ""]
     if not report.matched:
-        lines.append("No rules apply to this change.")
+        lines += [f"{badge(report)} &nbsp;No rules apply to this change. <sub>{links(report, run_url)}</sub>"]
         return "\n".join(lines)
 
-    lines += [sentence(report), "", "| Requirement | Status | Detail |", "|:--|:--|:--|"]
-    for rule in report.matched:
-        for req in rule.requirements:
-            label = f"**{req.label}**" + (" <sub>warn only</sub>" if req.severity != Severity.BLOCK else "")
-            lines.append(f"| {label}<br><sub>{rule.id}</sub> | {WORD[req.effective]} | {req.outcome.summary} |")
-    lines.append("")
+    pills = " ".join([badge(report), *(rule_pill(rule) for rule in report.matched)])
+    lines += [pills, "", sentence(report), ""]
 
-    blocking = report.blocking_unmet()
+    blocking = [
+        (rule, req) for rule, req in report.blocking_unmet() if req.effective != Status.PENDING or req.outcome.fix
+    ]
+    rest = [(rule, req) for rule, req in report.requirements if (rule, req) not in blocking]
     if blocking:
-        lines += ["### What is needed to merge", ""]
-        for rule in report.matched:
-            todo = [
-                req for r, req in blocking if r.id == rule.id and (req.effective != Status.PENDING or req.outcome.fix)
-            ]
-            if not todo:
-                continue
-            title = f"**`{rule.id}`**"
-            if rule.description:
-                title += f" · {rule.description}"
-            lines += [title, ""]
-            for req in todo:
-                lines.append(f"- **{req.label}**: {req.outcome.fix or req.outcome.summary}")
-                if req.outcome.status in (Status.FAIL, Status.ERROR):
-                    lines += [f"  - {d}" for d in req.outcome.details[:3]]
-                    if len(req.outcome.details) > 3:
-                        lines.append(f"  - and {len(req.outcome.details) - 3} more")
-            if rule.instructions:
-                lines.append(f"  <sub>{rule.instructions.strip()}</sub>")
+        lines += ["| Needed | What to do |", "|:--|:--|"]
+        for rule, req in blocking:
+            lines.append(f"| {status_pill(req.effective)} {req.label}<br><sub>{rule.id}</sub> | {what_to_do(req)} |")
+        lines.append("")
+        instructions = {rule.id: rule.instructions for rule, _ in blocking if rule.instructions}
+        for rule_id, text in instructions.items():
+            lines.append(f"<sub>**{rule_id}**: {text.strip()}</sub>")
+        if instructions:
             lines.append("")
         template = report.evidence_template()
         if template:
             lines += [
-                "<details><summary>Evidence template</summary>",
-                "",
-                "Paste into the PR description and fill in the placeholders.",
+                "**Evidence template**, to paste into the PR description:",
                 "",
                 evidence.render(template, report.evidence_block),
                 "",
-                "</details>",
-                "",
             ]
-
-    warnings = report.warnings()
-    if warnings:
-        lines += ["<details><summary>Warnings, not blocking</summary>", ""]
-        for rule, req in warnings:
-            note = f" {req.instructions.strip()}" if req.instructions else ""
-            lines.append(f"- **{req.label}** (`{rule.id}`): {req.outcome.summary}.{note}")
-        lines += ["", "</details>", ""]
+        if rest:
+            lines += ["**Everything else**", "", *requirement_rows(rest), ""]
+    else:
+        lines += [*requirement_rows(rest), ""]
 
     lines.append(
-        f"<sub>Updated {report.evaluated_at}. Re-evaluated on push, label, comment and CI completion. "
-        f"`mergeproof explain` shows the same requirements locally.</sub>"
+        f"<sub>Updated {report.evaluated_at} · re-evaluated on push, label, comment and CI completion · "
+        f"`mergeproof explain` shows this locally · {links(report, run_url)}</sub>"
     )
     return "\n".join(lines)
 
