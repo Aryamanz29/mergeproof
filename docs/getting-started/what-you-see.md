@@ -7,7 +7,7 @@ The gate reports in three places. All three come from one evaluation, so they ne
 One comment per pull request, updated in place on every push, label change, comment and CI
 completion. Nothing is collapsed; the order is fixed.
 
-<p align="center"><img src="../../assets/pr-comment.svg" alt="The mergeproof comment" width="760"></p>
+<p align="center"><img src="../../assets/pr-comment.png" alt="The mergeproof comment" width="800"></p>
 
 1. **The scorecard.** One pill per rule, coloured by its worst requirement: green when satisfied,
    amber when something is pending or a warning is open, red when something is missing. The first

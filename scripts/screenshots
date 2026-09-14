@@ -1,0 +1,140 @@
+#!/usr/bin/env python3
+"""Regenerate the README screenshots from real output.
+
+    scripts/screenshots comment 33 [height]                                  # -> docs/assets/pr-comment.png
+    scripts/screenshots explain examples/python-library missing-tests [height]   # -> docs/assets/explain.png
+
+Needs `gh` (for the comment) and Google Chrome or Chromium; nothing else. The comment is the
+HTML GitHub itself rendered, wrapped in github-markdown-css, so the picture is what a reviewer
+sees. The window height is the picture height: pass a third argument to change it when a comment
+is taller or shorter than the default.
+"""
+
+from __future__ import annotations
+
+import html
+import json
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+ASSETS = ROOT / "docs" / "assets"
+CANDIDATES = (
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    shutil.which("google-chrome"),
+    shutil.which("chromium"),
+)
+CHROME = next((c for c in CANDIDATES if c and Path(c).exists()), None)
+MARKDOWN_CSS = "https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.8.1/github-markdown-light.min.css"
+AVATAR = "https://avatars.githubusercontent.com/in/15368?s=48&v=4"
+
+COMMENT_PAGE = """<!doctype html><meta charset="utf-8">
+<link rel="stylesheet" href="{css}">
+<style>
+ body {{ margin: 0; background: #fff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }}
+ .wrap {{ width: 900px; padding: 24px; box-sizing: border-box; }}
+ .comment {{ border: 1px solid #d1d9e0; border-radius: 6px; overflow: hidden; }}
+ .head {{ background: #f6f8fa; border-bottom: 1px solid #d1d9e0; padding: 8px 16px; font-size: 14px;
+         color: #59636e; display: flex; align-items: center; gap: 8px; }}
+ .head img {{ width: 24px; height: 24px; border-radius: 50%; }}
+ .head b {{ color: #1f2328; }}
+ .bot {{ border: 1px solid #d1d9e0; border-radius: 12px; padding: 0 6px; font-size: 12px; line-height: 18px; }}
+ .markdown-body {{ padding: 16px; font-size: 14px; }}
+ .markdown-body table {{ width: 100%; display: table; }}
+</style>
+<div class="wrap"><div class="comment">
+<div class="head"><img src="{avatar}" alt=""><b>github-actions</b><span class="bot">bot</span>
+<span>commented 2 minutes ago</span></div>
+<div class="markdown-body">{body}</div></div></div>"""
+
+TERMINAL_PAGE = """<!doctype html><meta charset="utf-8"><style>
+ body {{ margin: 0; background: #fff; }}
+ .win {{ width: 860px; margin: 20px; border-radius: 10px; background: #1e1f26; overflow: hidden;
+        box-shadow: 0 12px 40px rgba(0,0,0,.25); color: #d7dae0;
+        font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 13.5px; line-height: 1.55; }}
+ .bar {{ height: 36px; background: #2a2b33; display: flex; align-items: center; padding: 0 14px; gap: 8px; }}
+ .dot {{ width: 12px; height: 12px; border-radius: 50%; }}
+ .title {{ margin: 0 auto; color: #8b8f9a; font-size: 12px; font-family: -apple-system, system-ui, sans-serif; }}
+ pre {{ margin: 0; padding: 18px 22px 22px; white-space: pre-wrap; word-break: break-word; }}
+ .prompt {{ color: #8b8f9a; }} .cmd {{ color: #fff; font-weight: 600; }}
+ .h1 {{ color: #c4b5fd; font-weight: 700; }} .h2 {{ color: #a78bfa; font-weight: 700; }}
+ .good {{ color: #3fb950; font-weight: 700; }} .bad {{ color: #f85149; font-weight: 700; }}
+ .wait {{ color: #d29922; font-weight: 700; }} .dim {{ color: #8b8f9a; }}
+ .fix {{ color: #e3b341; }} .code {{ color: #79c0ff; }} b {{ color: #fff; }}
+</style>
+<div class="win"><div class="bar">
+<span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span>
+<span class="dot" style="background:#28c840"></span><span class="title">{title}</span></div>
+<pre><span class="prompt">$ </span><span class="cmd">{command}</span>
+
+{body}
+<span class="dim">exit {code}</span></pre></div>"""
+
+
+def shoot(page: str, out: Path, width: int, height: int) -> None:
+    if not CHROME:
+        sys.exit("Google Chrome or Chromium is needed to render screenshots")
+    with tempfile.TemporaryDirectory() as tmp:
+        src = Path(tmp) / "page.html"
+        src.write_text(page)
+        flags = ["--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=2"]
+        flags += [f"--window-size={width},{height}", "--virtual-time-budget=8000", f"--screenshot={out}"]
+        subprocess.run([CHROME, *flags, src.as_uri()], check=True, capture_output=True)
+    print(f"wrote {out.relative_to(ROOT)} at {width}x{height} CSS px, 2x")
+
+
+def comment(pr: str, height: int = 655) -> None:
+    accept = "Accept: application/vnd.github.full+json"  # body (to find ours) and body_html (to render)
+    endpoint = f"repos/{{owner}}/{{repo}}/issues/{pr}/comments"
+    body = subprocess.run(["gh", "api", "-H", accept, endpoint], check=True, capture_output=True, text=True).stdout
+    ours = [c for c in json.loads(body) if "mergeproof-report" in c.get("body", "")]
+    if not ours:
+        sys.exit(f"no mergeproof comment on #{pr}")
+    page = COMMENT_PAGE.format(css=MARKDOWN_CSS, avatar=AVATAR, body=ours[-1]["body_html"])
+    shoot(page, ASSETS / "pr-comment.png", 900, height)
+
+
+def paint(line: str) -> str:
+    e = html.escape(line)
+    e = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", e)
+    e = re.sub(r"`([^`]+)`", r'<span class="code">\1</span>', e)
+    if line.startswith("# "):
+        return f'<span class="h1">{e[2:]}</span>'
+    if line.startswith("## "):
+        return f'<span class="h2">{e[3:]}</span>'
+    for mark, cls, glyph in (("❌", "bad", "✗"), ("✅", "good", "✓"), ("⏳", "wait", "…")):
+        if line.startswith(f"- {mark}"):
+            return e.replace(mark, f'<span class="{cls}">{glyph}</span>')
+    if line.startswith("  - fix:"):
+        return f'<span class="fix">{e}</span>'
+    if line.startswith("  -"):
+        return f'<span class="dim">{e}</span>'
+    return e
+
+
+def explain(example: str, scenario: str, height: int = 740) -> None:
+    folder = ROOT / example
+    data = json.loads((folder / "scenarios" / f"{scenario}.json").read_text())["context"]
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+        json.dump(data, f)
+    cmd = [sys.executable, "-m", "mergeproof", "explain", "--policy", str(folder / "mergeproof.yaml")]
+    proc = subprocess.run([*cmd, "--context", f.name], capture_output=True, text=True)
+    body = "\n".join(paint(line) for line in proc.stdout.rstrip("\n").split("\n"))
+    command = "mergeproof explain"
+    page = TERMINAL_PAGE.format(title=command, command=command, body=body, code=proc.returncode)
+    shoot(page, ASSETS / "explain.png", 900, height)
+
+
+if __name__ == "__main__":
+    args = sys.argv[1:]
+    if args[:1] == ["comment"] and len(args) in (2, 3):
+        comment(args[1], *map(int, args[2:]))
+    elif args[:1] == ["explain"] and len(args) in (3, 4):
+        explain(args[1], args[2], *map(int, args[3:]))
+    else:
+        sys.exit(__doc__)

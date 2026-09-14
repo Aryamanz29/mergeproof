@@ -62,7 +62,7 @@ mergeproof explain               # what does the current diff have to prove?
 Then add [the workflow](getting-started/quickstart.md#2-add-the-workflow), require the `mergeproof`
 status, and the gate is on.
 
-<p align="center"><img src="assets/pr-comment.svg" alt="The mergeproof comment on a pull request" width="760"></p>
+<p align="center"><img src="assets/pr-comment.png" alt="The mergeproof comment on a pull request" width="800"></p>
 
 ## Why this exists
 
