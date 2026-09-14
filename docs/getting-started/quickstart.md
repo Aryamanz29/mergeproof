@@ -51,7 +51,8 @@ jobs:
     permissions: { contents: read, pull-requests: write, statuses: write, checks: read }
     steps:
       - uses: actions/checkout@v4
-        with: { ref: ${{ github.event.repository.default_branch }} }   # policy from the base branch
+        with:
+          ref: ${{ github.event.repository.default_branch }}   # policy from the base branch
       - uses: Aryamanz29/mergeproof@v0
         env:
           MERGEPROOF_PR_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
