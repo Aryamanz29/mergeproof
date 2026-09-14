@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="docs/assets/logo.svg" alt="mergeproof" width="112">
+  <img src="docs/assets/logo-wordmark.svg" alt="mergeproof: proof before merge" width="420">
 </p>
-
-<h1 align="center">mergeproof</h1>
 
 <p align="center"><strong>Proof before merge.</strong> Pull requests earn their merge with evidence, not claims.</p>
 
