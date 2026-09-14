@@ -222,6 +222,27 @@ class TestHumanVerified:
         assert run_check(check, make_context(comments=[review]), require_review_state="APPROVED").status == Status.PASS
         assert run_check(check, make_context(online=False)).status == Status.PENDING
 
+    def test_approving_review_counts_when_accepted(self):
+        check = HumanVerified()
+        approved = Comment(author="reviewer", body="", kind="review", state="APPROVED", commit=HEAD, url="https://r/1")
+        stale = Comment(author="reviewer", body="", kind="review", state="APPROVED", commit="0" * 40)
+        requested_changes = Comment(author="reviewer", body="", kind="review", state="CHANGES_REQUESTED", commit=HEAD)
+        by_bot = Comment(author="review[bot]", body="", kind="review", state="APPROVED", commit=HEAD)
+
+        out = run_check(check, make_context(comments=[approved]))
+        assert out.status == Status.PENDING, "approval is opt-in"
+        out = run_check(check, make_context(comments=[approved]), accept_approval=True)
+        assert out.status == Status.PASS and out.data["how"] == "approved" and out.details == ["https://r/1"]
+        out = run_check(check, make_context(comments=[stale, requested_changes, by_bot]), accept_approval=True)
+        assert out.status == Status.PENDING and len(out.details) == 2
+        assert "older commit" in out.details[0]
+        assert (
+            run_check(check, make_context(comments=[stale]), accept_approval=True, bind_to_head=False).status
+            == Status.PASS
+        )
+        assert "approving review" in out.summary
+        assert "approves the pull request" in check.explain(check.Params(accept_approval=True))
+
 
 def verdict(author, head=HEAD[:7], verdict="pass", confidence=0.9, at="2026-01-01T00:00:00Z", name="review"):
     text = f"```verdict\ncheck: {name}\nverdict: {verdict}\nhead: {head}\nconfidence: {confidence}\nsummary: ok\n```"

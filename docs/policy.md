@@ -141,11 +141,13 @@ by a newer push is not a failure.
 
 ### `review.human_verified`
 
-A human other than the author posted the verification phrase.
+A human other than the author verified the evidence: the verification phrase in a comment, or an
+approving review when `accept_approval` is on.
 
 | parameter | meaning |
 |---|---|
 | `phrase` | default `/verified` |
+| `accept_approval` | an approving review counts, without the phrase; with `bind_to_head` the review must be on the head commit, so a new push asks for a fresh approval (default false) |
 | `bind_to_head` | the comment must contain the 7-character head sha (default true); a new push invalidates it |
 | `allowed_users` | logins allowed to verify; empty means any non-author human |
 | `exclude_author` | default true |

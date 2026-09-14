@@ -24,6 +24,7 @@ class Comment(BaseModel):
     created_at: str = ""
     kind: str = "comment"
     state: str | None = None
+    commit: str | None = Field(default=None, description="For reviews, the head sha they were submitted against")
     url: str | None = None
 
     @property
