@@ -15,6 +15,7 @@ Exit codes: 0 pass or warn, 1 fail, 2 pending, 3 usage or policy error.
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -24,7 +25,7 @@ from typing import NoReturn
 
 import httpx
 
-from mergeproof import __version__, engine, evidence, policy, receipt, render
+from mergeproof import __version__, engine, evidence, policy, receipt, render, replay
 from mergeproof.checks.registry import Registry, load_registry
 from mergeproof.context import Context, ContextError
 from mergeproof.providers import git, github
@@ -269,6 +270,49 @@ def cmd_receipt(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_replay(args: argparse.Namespace) -> int:
+    registry = load_registry()
+    candidate = load_policy(args, registry)
+    repo = args.repo or os.environ.get("MERGEPROOF_REPO") or os.environ.get("GITHUB_REPOSITORY")
+    if not repo:
+        die("which repository? pass --repo OWNER/NAME")
+    against: policy.Policy | None = None
+    try:
+        client = github.client_from_env()
+        if args.against:
+            against = load_against(client, repo, args.against, registry)
+        pulls = replay.merged_pulls(client, repo, last=args.last, since=args.since)
+        progress = None if args.quiet else (lambda line: print(f"replaying {line}", file=sys.stderr))
+        result = replay.replay(client, repo, pulls, candidate, registry, against, progress=progress)
+    except (ContextError, httpx.HTTPError) as exc:
+        die(str(exc), code=1)
+    if args.save:
+        written = replay.save_scenarios(result, Path(args.save))
+        print(f"mergeproof: {len(written)} scenario files in {args.save}", file=sys.stderr)
+    print(replay.render_json(result) if args.format == "json" else replay.render_text(result, repo), end="")
+    return 1 if result.would_block and args.fail_on_block else 0
+
+
+def load_against(client: github.Client, repo: str, spec: str, registry: Registry) -> policy.Policy:
+    """`current` is the policy on the default branch; anything else is a local path."""
+    if spec != "current":
+        try:
+            return policy.load(spec)
+        except policy.PolicyError as exc:
+            die(str(exc))
+    info = client.get(f"/repos/{repo}")
+    ref = info.get("default_branch", "main")
+    try:
+        data = client.get(f"/repos/{repo}/contents/mergeproof.yaml", ref=ref)
+    except httpx.HTTPStatusError as exc:
+        die(f"no mergeproof.yaml on {ref} in {repo} ({exc.response.status_code})", code=1)
+    text = base64.b64decode(data["content"]).decode("utf-8")
+    try:
+        return policy.loads(text, source=f"{repo}:{ref}:mergeproof.yaml")
+    except policy.PolicyError as exc:
+        die(str(exc))
+
+
 def cmd_explain(args: argparse.Namespace) -> int:
     registry = load_registry()
     pol = load_policy(args, registry)
@@ -413,6 +457,20 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--receipt", action="store_true", help="when the PR has merged, store the final report on a branch")
     p.add_argument("--receipt-branch", default=receipt.DEFAULT_BRANCH, metavar="BRANCH")
     p.set_defaults(func=cmd_comment)
+
+    p = sub.add_parser("replay", help="evaluate a policy against pull requests that already merged; posts nothing")
+    add_policy_arg(p)
+    p.add_argument("--repo", help="OWNER/NAME; default from MERGEPROOF_REPO or GITHUB_REPOSITORY")
+    p.add_argument("--last", type=int, default=50, metavar="N", help="how many merged pull requests (default 50)")
+    p.add_argument("--since", metavar="DATE", help="only pull requests merged on or after this ISO date")
+    p.add_argument(
+        "--against", metavar="POLICY", help="also evaluate this policy (a path, or `current` for the default branch's)"
+    )
+    p.add_argument("--save", metavar="DIR", help="write one scenario file per pull request for the test suite")
+    p.add_argument("-f", "--format", choices=("text", "json"), default="text")
+    p.add_argument("--fail-on-block", action="store_true", help="exit 1 when any pull request would have been blocked")
+    p.add_argument("-q", "--quiet", action="store_true", help="no progress on stderr")
+    p.set_defaults(func=cmd_replay)
 
     p = sub.add_parser("receipt", help="show what a merged pull request proved (by merge sha, #number or number)")
     p.add_argument("key", help="merge commit sha, `#123` or `123`")
