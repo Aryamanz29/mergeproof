@@ -123,6 +123,29 @@ one account or organisation. Another organisation should create its own App; the
 policy are identical. The workflow job row itself keeps the Actions icon; naming the job
 `🛡️ mergeproof` puts the mark there as text.
 
+## Checking the setup
+
+`mergeproof doctor` reads what this page describes and reports what is off, with the fix:
+
+```
+[   ok] policy: mergeproof.yaml: 4 rule(s), every check known
+[error] workflow: .github/workflows/mergeproof.yml: the policy reads comments (review.human_verified) but the workflow does not run on issue_comment
+        fix: add `issue_comment: { types: [created, edited] }` under `on:`; verification would otherwise wait for the next push
+[ warn] workflow: .github/workflows/mergeproof.yml: `contents: write` is missing; needed for writing receipts; without it the action logs and skips them
+        fix: add `contents: write` to the job's `permissions:`
+[error] repository: acme/svc: the `mergeproof` status is not required on main (ruleset requires nothing)
+        fix: add the `mergeproof` context to the required status checks; until then the gate only reports
+
+2 error(s), 1 warning(s)
+```
+
+It checks: the policy validates and every verifier it names is installed; a workflow uses the
+action with a pinned ref; `pull_request` covers pushes, edits, labels and `closed` for receipts;
+`issue_comment` and `check_suite` are subscribed when the policy needs them, with
+`MERGEPROOF_PR_NUMBER` set; permissions cover the enabled channels; the checkout reads the policy
+from the base branch; and, with a token, that the `mergeproof` status is required on the default
+branch. It reports only what it looked at; the repository part is skipped without a token.
+
 ## Security notes
 
 - The policy is read from the base branch; PRs from forks cannot change it.

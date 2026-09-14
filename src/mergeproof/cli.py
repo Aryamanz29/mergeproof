@@ -25,7 +25,7 @@ from typing import NoReturn
 
 import httpx
 
-from mergeproof import __version__, engine, evidence, policy, receipt, render, replay
+from mergeproof import __version__, doctor, engine, evidence, policy, receipt, render, replay
 from mergeproof.checks.registry import Registry, load_registry
 from mergeproof.context import Context, ContextError
 from mergeproof.providers import git, github
@@ -387,6 +387,25 @@ def cmd_validate(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_doctor(args: argparse.Namespace) -> int:
+    repo = args.repo or os.environ.get("MERGEPROOF_REPO") or os.environ.get("GITHUB_REPOSITORY")
+    if not repo:
+        repo = git.remote_repo(args.root)
+    try:
+        client: github.Client | None = github.client_from_env()
+    except ContextError:
+        client = None
+    try:
+        findings = doctor.run(args.policy, load_registry(), root=args.root, repo=repo, client=client)
+    except httpx.HTTPError as exc:
+        die(str(exc), code=1)
+    if args.format == "json":
+        print(json.dumps(doctor.to_json(findings), indent=2))
+    else:
+        print(doctor.render_text(findings), end="")
+    return doctor.worst(findings)
+
+
 def cmd_init(args: argparse.Namespace) -> int:
     target = Path(args.policy)
     if target.exists() and not args.force:
@@ -517,6 +536,13 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("validate", help="check the policy file")
     add_policy_arg(p)
     p.set_defaults(func=cmd_validate)
+
+    p = sub.add_parser("doctor", help="check the policy, the workflow and the branch rules; print fixes")
+    add_policy_arg(p)
+    p.add_argument("--root", default=".", help="repository root holding .github/workflows")
+    p.add_argument("--repo", help="OWNER/NAME for the branch-rule check; default from the environment")
+    p.add_argument("-f", "--format", choices=("text", "json"), default="text")
+    p.set_defaults(func=cmd_doctor)
 
     p = sub.add_parser("init", help="write a starter policy")
     add_policy_arg(p)

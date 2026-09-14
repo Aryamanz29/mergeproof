@@ -155,6 +155,7 @@ def test_command_surface_is_the_documented_one(capsys):
         "agent-prompt",
         "receipt",
         "replay",
+        "doctor",
     }
     assert "mcp" not in commands
 
@@ -403,3 +404,26 @@ def test_checks_usage_counts_checks_and_lists_shell_commands(tmp_path, capsys):
     assert run("checks") == 0
     listing = capsys.readouterr().out
     assert "tests.changed" in listing and "shell commands" not in listing
+
+
+def test_doctor_command_exit_codes_and_json(tmp_path, monkeypatch, capsys):
+    (tmp_path / ".github" / "workflows").mkdir(parents=True)
+    (tmp_path / ".github" / "workflows" / "gate.yml").write_text(
+        "on:\n  pull_request:\n    types: [opened, synchronize, reopened, edited, labeled, unlabeled, closed]\n"
+        "jobs:\n  gate:\n    runs-on: ubuntu-latest\n"
+        "    permissions: { contents: write, pull-requests: write, statuses: write, checks: read }\n"
+        "    steps:\n      - uses: actions/checkout@v4\n        with: { ref: main }\n"
+        "      - uses: Aryamanz29/mergeproof@v0\n"
+    )
+    (tmp_path / "mergeproof.yaml").write_text(
+        "rules:\n  - id: r\n    when: { paths: ['src/**'] }\n    require: [{ check: files.changed }]\n"
+    )
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.delenv("GH_TOKEN", raising=False)
+    assert run("doctor", "-p", tmp_path / "mergeproof.yaml", "--root", tmp_path) == 0
+    out = capsys.readouterr().out
+    assert "[   ok] workflow" in out and "no GITHUB_TOKEN" in out
+    (tmp_path / ".github" / "workflows" / "gate.yml").write_text("on: [push]\njobs: {}\n")
+    assert run("doctor", "-p", tmp_path / "mergeproof.yaml", "--root", tmp_path, "-f", "json") == 1
+    data = json.loads(capsys.readouterr().out)
+    assert any(f["level"] == "error" and "no workflow under" in f["message"] for f in data)

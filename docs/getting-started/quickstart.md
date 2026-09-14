@@ -65,6 +65,16 @@ GitHub merges anything unless a ruleset says otherwise. Require **one** context,
 your default branch; the policy decides what stands behind it. Details and the exact API call are
 in [GitHub setup](../guides/github.md#making-it-block-the-ruleset).
 
+## 4. Check the setup
+
+```sh
+GITHUB_TOKEN=$(gh auth token) mergeproof doctor --repo OWNER/NAME
+```
+
+The doctor reads the policy, the workflow files and the branch rules, and prints each finding with
+the fix next to it: a missing permission, an event the workflow does not subscribe to, a status
+that is not required yet. Exit 0 means nothing is wrong.
+
 ## What happens next
 
 Every pull request gets a scorecard comment, a `mergeproof` commit status, and review comments on

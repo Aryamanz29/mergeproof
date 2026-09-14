@@ -286,3 +286,15 @@ def test_sync_review_comments_creates_updates_and_deletes():
         and sent["path"] in {"src/a.py", "src/b.py"}
     )
     assert updated.called and deleted.called
+
+
+def test_remote_repo_parses_github_urls(repo, monkeypatch):
+    import subprocess
+
+    subprocess.run(["git", "remote", "add", "origin", "git@github.com:acme/svc.git"], cwd=repo, check=True)
+    assert git.remote_repo(str(repo)) == "acme/svc"
+    subprocess.run(["git", "remote", "set-url", "origin", "https://github.com/acme/svc"], cwd=repo, check=True)
+    assert git.remote_repo(str(repo)) == "acme/svc"
+    subprocess.run(["git", "remote", "set-url", "origin", "https://gitlab.com/acme/svc.git"], cwd=repo, check=True)
+    assert git.remote_repo(str(repo)) is None
+    assert git.remote_repo("/nonexistent") is None

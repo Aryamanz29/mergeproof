@@ -8,6 +8,7 @@ agent wants to know before pushing.
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 
@@ -100,3 +101,13 @@ def _config(root: str, key: str) -> str:
         return git(root, "config", key)
     except ContextError:
         return ""
+
+
+def remote_repo(root: str = ".", remote: str = "origin") -> str | None:
+    """`OWNER/NAME` from the remote's URL, for GitHub remotes over https or ssh; None otherwise."""
+    try:
+        url = git(root, "remote", "get-url", remote).strip()
+    except Exception:
+        return None
+    match = re.search(r"github\.com[:/]([^/\s]+/[^/\s]+?)(?:\.git)?/?$", url)
+    return match.group(1) if match else None
