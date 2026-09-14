@@ -5,8 +5,8 @@ import pytest
 from mergeproof.checks.agent_verdict import AgentVerdict
 from mergeproof.checks.body import Body
 from mergeproof.checks.ci_job import CiJobPassed
-from mergeproof.checks.evidence_artifacts import EvidenceArtifacts
 from mergeproof.checks.eval_score import EvalRun, EvalScore, MissingCredentials
+from mergeproof.checks.evidence_artifacts import EvidenceArtifacts
 from mergeproof.checks.evidence_field import EvidenceField
 from mergeproof.checks.evidence_links import EvidenceLinks
 from mergeproof.checks.files import FilesChanged
