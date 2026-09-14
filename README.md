@@ -33,19 +33,7 @@ coding agents what to produce before they open the PR.
 
 ## How it works
 
-```mermaid
-flowchart LR
-    policy["mergeproof.yaml<br/>when a change touches X, it must prove Y"]
-    agent["contributor or coding agent<br/>mergeproof explain"]
-    pr["pull request<br/>diff, CI runs, evidence block, reviews"]
-    gate["mergeproof action"]
-    verifiers["verifiers<br/>http, Langfuse, Braintrust, yours"]
-    out["scorecard comment<br/>commit status: mergeproof<br/>review comments on the files"]
-
-    policy --> agent --> pr --> gate --> out
-    policy --> gate
-    gate -. links are looked up at their source .-> verifiers
-```
+<p align="center"><img src="https://raw.githubusercontent.com/Aryamanz29/mergeproof/main/docs/assets/how-it-works.svg" alt="One policy file. Contributors and agents read it before pushing; the action enforces it against the diff, CI runs, evidence block and reviews; the pull request gets a scorecard comment, the mergeproof commit status and review comments on the files." width="900"></p>
 
 - **One policy file.** A rule pairs a `when` (paths, labels, title, base branch) with what it
   `require`s: checks with parameters. Nothing to script.
