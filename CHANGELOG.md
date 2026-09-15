@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). From 0.2.0 on, entries are generated
 by release-please from Conventional Commit messages.
 
+## [1.0.1](https://github.com/Aryamanz29/mergeproof/compare/v1.0.0...v1.0.1) (2026-09-15)
+
+
+### Fixed
+
+* **report:** carry the evidence URL on verified lines ([90da300](https://github.com/Aryamanz29/mergeproof/commit/90da30021cc849968db52d0761cd6a690bf42775))
+* **report:** carry the evidence URL on verified lines ([b7176fc](https://github.com/Aryamanz29/mergeproof/commit/b7176fcfbc355479383132bf50f2a688af9d5007))
+
 ## [1.0.0](https://github.com/Aryamanz29/mergeproof/compare/v0.6.0...v1.0.0) (2026-09-14)
 
 
