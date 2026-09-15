@@ -16,7 +16,7 @@ from mergeproof.policy import Policy, PolicyError, Requirement, Rule, Severity, 
 from mergeproof.report import Annotation, Outcome, Report, RequirementResult, RuleResult, Status
 from mergeproof.verifiers.base import Verification, Verifier
 
-__version__ = "1.0.1"  # x-release-please-version
+__version__ = "1.0.2"  # x-release-please-version
 
 __all__ = [
     "Annotation",

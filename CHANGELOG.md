@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). From 0.2.0 on, entries are generated
 by release-please from Conventional Commit messages.
 
+## [1.0.2](https://github.com/Aryamanz29/mergeproof/compare/v1.0.1...v1.0.2) (2026-09-15)
+
+
+### Fixed
+
+* **report:** show every before/after pair, one line each ([1dacff4](https://github.com/Aryamanz29/mergeproof/commit/1dacff4b8508c68bcb1519ef36d201bc827d8516))
+* **report:** show every before/after pair, one line each ([522b6cf](https://github.com/Aryamanz29/mergeproof/commit/522b6cf5a9ed1e9b7c6853b74ab09e9366679ac9))
+
 ## [1.0.1](https://github.com/Aryamanz29/mergeproof/compare/v1.0.0...v1.0.1) (2026-09-15)
 
 
