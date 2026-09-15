@@ -163,7 +163,10 @@ def verify_all(
             results.append((f"{e.label}: {type(exc).__name__} while verifying {e.url}", None))
             continue
         if verification.found:
-            results.append((f"{e.label}: {verification.line()}", verification))
+            # The URL rides the line so a reviewer can open the evidence straight from the
+            # report — the failure branches below already do this; success did not, which left
+            # the one audience that must click the links with nothing to click.
+            results.append((f"{e.label}: {verification.line()} — {e.url}", verification))
         else:
             results.append((f"{e.label}: not found at {e.url}", verification))
     return results

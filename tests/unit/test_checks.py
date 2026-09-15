@@ -160,7 +160,10 @@ class TestEvidenceLinks:
         check.verifier = StubVerifier({"https://x/1", "https://x/2"}, rich={"https://x/2"})
         out = run_check(check, ctx, verify="stub")
         assert out.status == Status.PASS
-        assert out.details == ["before: stub", "after: tracer · 14 spans · 2026-09-14T17:02Z"]
+        assert out.details == [
+            "before: stub — https://x/1",
+            "after: tracer · 14 spans · 2026-09-14T17:02Z — https://x/2",
+        ]
         assert out.data["verified"][1] == {
             "found": True,
             "source": "tracer",
@@ -250,7 +253,7 @@ class TestEvidenceArtifacts:
         out = run_check(check, make_context(body=one), key="preview", kind="single", verify="stub")
         assert out.status == Status.PASS and out.summary == "1 link, all verified"
         assert (
-            out.details == ["preview: tracer · 14 spans · 2026-09-14T17:02Z"]
+            out.details == ["preview: tracer · 14 spans · 2026-09-14T17:02Z — https://s/1.png"]
             and out.data["verified"][0]["size"] == "14 spans"
         )
         assert (
