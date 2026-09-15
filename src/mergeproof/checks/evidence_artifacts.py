@@ -73,7 +73,32 @@ def evaluate(ctx: Context, spec: Spec, verifier: Verifier | None = None) -> Outc
     if unresolved:
         return fail("link(s) could not be verified", details=unresolved, fix=spec.fix)
     data["verified"] = [v.model_dump(exclude_none=True) for _, v in verified if v]
-    return ok(f"{plural(count, noun)}, all verified", details=[line for line, _ in verified], data=data)
+    details = pair_lines(entries, verified) if spec.kind == "pair" else [line for line, _ in verified]
+    return ok(f"{plural(count, noun)}, all verified", details=details, data=data)
+
+
+def pair_lines(entries: list[Entry], verified: list[tuple[str, Verification | None]]) -> list[str]:
+    """One line per before/after pair, with the URLs behind short links.
+
+    A pair used to render as two lines carrying full URLs, so three pairs
+    overflowed the report's detail cap and the reader was told "and 2 more"
+    about the very evidence they are asked to open. One line per pair fits,
+    and the descriptor is kept once rather than repeated for each side.
+    """
+    by_item: dict[int, dict[str, tuple[str, str]]] = {}
+    for entry, (line, _) in zip(entries, verified, strict=False):
+        text = line.split(": ", 1)[1] if ": " in line else line
+        text = text.split(" — ")[0].strip()
+        by_item.setdefault(entry.item, {})[entry.label] = (entry.url, text)
+    out: list[str] = []
+    for i, item in enumerate(sorted(by_item), start=1):
+        sides = by_item[item]
+        # Prefer the fuller descriptor: the two sides usually agree, and when they
+        # do not the longer one carries the span count and timestamp.
+        descriptor = max((t for _, t in sides.values()), key=len, default="")
+        links = " · ".join(f"[{label}]({url})" for label, (url, _) in sorted(sides.items(), reverse=True))
+        out.append(f"{i}. {descriptor} — {links}" if descriptor else f"{i}. {links}")
+    return out
 
 
 @dataclass

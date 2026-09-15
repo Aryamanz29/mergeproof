@@ -161,8 +161,7 @@ class TestEvidenceLinks:
         out = run_check(check, ctx, verify="stub")
         assert out.status == Status.PASS
         assert out.details == [
-            "before: stub — https://x/1",
-            "after: tracer · 14 spans · 2026-09-14T17:02Z — https://x/2",
+            "1. tracer · 14 spans · 2026-09-14T17:02Z — [before](https://x/1) · [after](https://x/2)"
         ]
         assert out.data["verified"][1] == {
             "found": True,
