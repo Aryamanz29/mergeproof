@@ -1,0 +1,189 @@
+{
+  "receipt": {
+    "evaluated_at": "2026-09-15 16:25 UTC",
+    "format": 1,
+    "head_sha": "e39ed18b62b0b7a815ab8ad1d65d63bbe5cb8744",
+    "headline": "5 of 6 requirements satisfied, 1 warning",
+    "merge_commit_sha": "c90803bd6c8755edc0334f541538f46b51248559",
+    "merged_at": "2026-09-15T16:25:38Z",
+    "merged_by": "Aryamanz29",
+    "mergeproof": "1.0.0",
+    "policy": "mergeproof.yaml",
+    "policy_sha256": "1f7bc6e21f6bb6b5b5984c89c7c42b33be83033dc256c3d154b7504ba5fdb0c2",
+    "pull_request": 66,
+    "repo": "Aryamanz29/mergeproof",
+    "run_url": "https://github.com/Aryamanz29/mergeproof/actions/runs/34994923378",
+    "verdict": "warn"
+  },
+  "report": {
+    "base_ref": "main",
+    "evaluated_at": "2026-09-15 16:25 UTC",
+    "evidence_block": "evidence",
+    "head_sha": "e39ed18b62b0b7a815ab8ad1d65d63bbe5cb8744",
+    "merge_commit_sha": "c90803bd6c8755edc0334f541538f46b51248559",
+    "merged": true,
+    "merged_at": "2026-09-15T16:25:38Z",
+    "merged_by": "Aryamanz29",
+    "number": 66,
+    "policy_path": "mergeproof.yaml",
+    "policy_sha256": "1f7bc6e21f6bb6b5b5984c89c7c42b33be83033dc256c3d154b7504ba5fdb0c2",
+    "project": "mergeproof",
+    "repo": "Aryamanz29/mergeproof",
+    "rules": [
+      {
+        "description": "Lint, the unit matrix and the integration suite pass on the head commit. The `mergeproof` status is the only required check; this rule is what makes it stand for CI as a whole.",
+        "files": [
+          "src/mergeproof/checks/evidence_artifacts.py",
+          "tests/unit/test_checks.py"
+        ],
+        "id": "ci-green",
+        "instructions": null,
+        "matched": true,
+        "requirements": [
+          {
+            "check": "ci.job_passed",
+            "evidence_template": {},
+            "instructions": null,
+            "label": "lint",
+            "outcome": {
+              "annotations": [],
+              "data": {},
+              "details": [
+                "lint"
+              ],
+              "fix": null,
+              "status": "pass",
+              "summary": "1 run succeeded"
+            },
+            "severity": "block"
+          },
+          {
+            "check": "ci.job_passed",
+            "evidence_template": {},
+            "instructions": null,
+            "label": "unit tests on every Python",
+            "outcome": {
+              "annotations": [],
+              "data": {},
+              "details": [
+                "unit (3.12)",
+                "unit (3.13)",
+                "unit (3.11)"
+              ],
+              "fix": null,
+              "status": "pass",
+              "summary": "3 runs succeeded"
+            },
+            "severity": "block"
+          },
+          {
+            "check": "ci.job_passed",
+            "evidence_template": {},
+            "instructions": null,
+            "label": "integration",
+            "outcome": {
+              "annotations": [],
+              "data": {},
+              "details": [
+                "integration"
+              ],
+              "fix": null,
+              "status": "pass",
+              "summary": "1 run succeeded"
+            },
+            "severity": "block"
+          },
+          {
+            "check": "ci.job_passed",
+            "evidence_template": {},
+            "instructions": null,
+            "label": "docker image",
+            "outcome": {
+              "annotations": [],
+              "data": {},
+              "details": [
+                "docker image"
+              ],
+              "fix": null,
+              "status": "pass",
+              "summary": "1 run succeeded"
+            },
+            "severity": "block"
+          }
+        ],
+        "severity": "block",
+        "source": ""
+      },
+      {
+        "description": "A change to a module ships with a change to its tests.",
+        "files": [
+          "src/mergeproof/checks/evidence_artifacts.py"
+        ],
+        "id": "source-needs-tests",
+        "instructions": null,
+        "matched": true,
+        "requirements": [
+          {
+            "check": "tests.changed",
+            "evidence_template": {},
+            "instructions": null,
+            "label": "unit tests touched",
+            "outcome": {
+              "annotations": [],
+              "data": {},
+              "details": [
+                "src/mergeproof/checks/evidence_artifacts.py"
+              ],
+              "fix": null,
+              "status": "pass",
+              "summary": "tests changed for all 1 mapped source file"
+            },
+            "severity": "block"
+          }
+        ],
+        "severity": "block",
+        "source": ""
+      },
+      {
+        "description": "A changed example policy keeps or updates its scenarios.",
+        "files": [],
+        "id": "examples-stay-runnable",
+        "instructions": null,
+        "matched": false,
+        "requirements": [],
+        "severity": "block",
+        "source": ""
+      },
+      {
+        "description": "The changelog is generated from commit subjects, so a PR title that is not Conventional Commits will not appear in it.",
+        "files": [
+          "src/mergeproof/checks/evidence_artifacts.py",
+          "tests/unit/test_checks.py"
+        ],
+        "id": "conventional-title",
+        "instructions": null,
+        "matched": true,
+        "requirements": [
+          {
+            "check": "pr.labels",
+            "evidence_template": {},
+            "instructions": "Rename the PR to `type(scope): summary` (feat, fix, docs, ci, test, refactor, chore), or add the `changelog-not-needed` label.\n",
+            "label": "title follows Conventional Commits",
+            "outcome": {
+              "annotations": [],
+              "data": {},
+              "details": [],
+              "fix": "Labels: any of `changelog-not-needed`.",
+              "status": "fail",
+              "summary": "needs one of changelog-not-needed"
+            },
+            "severity": "warn"
+          }
+        ],
+        "severity": "warn",
+        "source": ""
+      }
+    ],
+    "source": "github"
+  }
+}
