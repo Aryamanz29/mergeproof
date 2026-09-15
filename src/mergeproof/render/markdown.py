@@ -119,8 +119,6 @@ def requirement_rows(pairs: list[tuple[RuleResult, RequirementResult]]) -> list[
     for rule, req in pairs:
         detail = req.outcome.summary
         if req.outcome.details:
-            # 12, not 4: a reader asked to open before/after evidence should see
-            # every pair, not be told "and 2 more" about the thing under review.
             shown = [d.replace("|", "\\|") for d in req.outcome.details[:12]]
             if len(req.outcome.details) > 12:
                 shown.append(f"and {len(req.outcome.details) - 12} more")

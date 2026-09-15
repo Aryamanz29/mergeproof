@@ -260,6 +260,29 @@ def test_satisfied_rows_show_what_was_found():
     assert f"1 before/after pair, all verified<br><sub>{detail}</sub>" in text
 
 
+def test_satisfied_rows_list_every_pair_up_to_twelve():
+    from mergeproof.report import Outcome, Report, RequirementResult, RuleResult
+
+    def row(details):
+        req = RequirementResult(
+            label="before/after traces",
+            check="evidence.links",
+            severity="block",
+            outcome=Outcome(status=Status.PASS, summary="all verified", details=details),
+        )
+        rule = RuleResult(id="live-evidence", severity="block", matched=True, files=["src/a.py"], requirements=[req])
+        return render.report_markdown(Report(rules=[rule]))
+
+    six = row([f"{i}. pair" for i in range(1, 7)])
+    assert "6. pair" in six
+    assert "more" not in six
+
+    thirteen = row([f"{i}. pair" for i in range(1, 14)])
+    assert "12. pair" in thirteen
+    assert "13. pair" not in thirteen
+    assert "and 1 more" in thirteen
+
+
 def test_explain_names_the_file_an_inherited_rule_came_from():
     pol = policy.loads(
         "rules:\n  - id: r\n    source: github:acme/policies/base.yaml@v1\n"
