@@ -49,8 +49,10 @@ rules:
         with: { any_of: ["examples/*/scenarios/*.json"] }
 
   - id: conventional-title
-    description: The changelog is generated from commit subjects, so a PR title that is not Conventional Commits will not appear in it.
-    severity: warn
+    description: >-
+      Squash merges use the PR title as the commit subject and release-please only releases Conventional
+      Commits, so a PR whose title is not one silently skips the changelog and the release.
+    severity: block
     when:
       title: "^(?!(feat|fix|perf|refactor|docs|test|ci|build|chore|release)(\\(.+\\))?!?: )"
     require:
